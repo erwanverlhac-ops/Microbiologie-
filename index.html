@@ -78,10 +78,20 @@
                 <input type="color" id="liquidColorPicker" class="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent opacity-50" title="Changer la couleur du liquide (sélectionnez un objet)" disabled value="#cccccc">
             </div>
 
+            <!-- NOUVEAU : Color Picker pour Colonies -->
+            <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-md border border-slate-200 pl-2">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Colonies</span>
+                <input type="color" id="coloniesColorPicker" class="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent opacity-50" title="Changer la couleur des colonies (sélectionnez une boîte)" disabled value="#cccccc">
+            </div>
+
             <div class="w-px h-6 bg-slate-200 mx-1"></div>
 
             <button onclick="exportPNG()" class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition">
                 <i data-lucide="image-down" class="w-4 h-4"></i> Exporter PNG
+            </button>
+            
+            <button onclick="exportSVG()" class="flex items-center gap-2 px-4 py-2 text-sm bg-slate-800 hover:bg-slate-900 text-white rounded-md shadow-sm transition">
+                <i data-lucide="file-code" class="w-4 h-4"></i> Exporter SVG
             </button>
         </div>
     </header>
@@ -310,47 +320,82 @@
         function moveToBack() { const obj = canvas.getActiveObject(); if (obj) { canvas.sendToBack(obj); if (obj.type === 'activeSelection') canvas.discardActiveObject(); canvas.renderAll(); } }
 
         const colorPicker = document.getElementById('liquidColorPicker');
+        const coloniesColorPicker = document.getElementById('coloniesColorPicker');
 
-        // Met à jour l'état du color picker selon la sélection
-        function updateColorPicker() {
+        // Met à jour l'état des color pickers selon la sélection
+        function updateColorPickers() {
             const activeObj = canvas.getActiveObject();
+            
+            // 1. Mise à jour du picker Liquide
             if (activeObj && activeObj.hasLiquid) {
-                // Cherche l'élément "liquide" au sein du groupe
                 const liquidElement = activeObj.getObjects().find(o => o.liquidPart === true);
                 if (liquidElement && liquidElement.baseHexColor) {
                     colorPicker.disabled = false;
                     colorPicker.value = liquidElement.baseHexColor;
                     colorPicker.classList.remove('opacity-50');
-                    return;
+                } else {
+                    colorPicker.disabled = true;
+                    colorPicker.classList.add('opacity-50');
+                    colorPicker.value = '#cccccc';
                 }
+            } else {
+                colorPicker.disabled = true;
+                colorPicker.classList.add('opacity-50');
+                colorPicker.value = '#cccccc';
             }
-            colorPicker.disabled = true;
-            colorPicker.classList.add('opacity-50');
-            colorPicker.value = '#cccccc';
+
+            // 2. Mise à jour du picker Colonies
+            if (activeObj && activeObj.hasColonies) {
+                coloniesColorPicker.disabled = false;
+                // On récupère la couleur de la première colonie pour initialiser le picker
+                const firstColony = activeObj.getObjects().find(o => o.isColony === true);
+                if (firstColony && firstColony.fill) {
+                    coloniesColorPicker.value = firstColony.fill.startsWith('#') ? firstColony.fill : '#ef4444';
+                }
+                coloniesColorPicker.classList.remove('opacity-50');
+            } else {
+                coloniesColorPicker.disabled = true;
+                coloniesColorPicker.classList.add('opacity-50');
+                coloniesColorPicker.value = '#cccccc';
+            }
         }
 
-        canvas.on('selection:created', updateColorPicker);
-        canvas.on('selection:updated', updateColorPicker);
-        canvas.on('selection:cleared', updateColorPicker);
+        canvas.on('selection:created', updateColorPickers);
+        canvas.on('selection:updated', updateColorPickers);
+        canvas.on('selection:cleared', updateColorPickers);
 
-        // Quand on change la couleur dans le color picker
+        // Quand on change la couleur dans le color picker liquide
         colorPicker.addEventListener('input', (e) => {
             const activeObj = canvas.getActiveObject();
             if (activeObj && activeObj.hasLiquid) {
                 const liquidElement = activeObj.getObjects().find(o => o.liquidPart === true);
                 if (liquidElement) {
                     const hexColor = e.target.value;
-                    const alpha = liquidElement.liquidAlpha || 0.5; // On récupère l'opacité propre à l'objet
+                    const alpha = liquidElement.liquidAlpha || 0.5; 
                     
-                    // Conversion du HEX en RGBA pour garder l'effet de transparence (verre)
                     const r = parseInt(hexColor.slice(1, 3), 16);
                     const g = parseInt(hexColor.slice(3, 5), 16);
                     const b = parseInt(hexColor.slice(5, 7), 16);
                     
                     liquidElement.set('fill', `rgba(${r}, ${g}, ${b}, ${alpha})`);
-                    liquidElement.baseHexColor = hexColor; // On sauvegarde la couleur pure pour le picker
+                    liquidElement.baseHexColor = hexColor; 
                     canvas.renderAll();
                 }
+            }
+        });
+
+        // Quand on change la couleur dans le color picker colonies
+        coloniesColorPicker.addEventListener('input', (e) => {
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && activeObj.hasColonies) {
+                const hexColor = e.target.value;
+                // On change la couleur de TOUTES les colonies en même temps (Culture pure)
+                activeObj.getObjects().forEach(o => {
+                    if (o.isColony) {
+                        o.set('fill', hexColor);
+                    }
+                });
+                canvas.renderAll();
             }
         });
 
@@ -435,12 +480,15 @@
                 const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#22c55e', '#d946ef'];
                 for(let i=0; i<15; i++) {
                     const angle = Math.random() * Math.PI * 2; const rad = Math.random() * 28;
-                    groupElements.push(new fabric.Circle({ radius: Math.random() * 2.5 + 1.5, fill: colors[Math.floor(Math.random() * colors.length)], left: Math.cos(angle) * rad, top: Math.sin(angle) * rad, originX: 'center', originY: 'center' }));
+                    // Ajout du tag "isColony: true" pour que le script puisse les identifier
+                    groupElements.push(new fabric.Circle({ radius: Math.random() * 2.5 + 1.5, fill: colors[Math.floor(Math.random() * colors.length)], left: Math.cos(angle) * rad, top: Math.sin(angle) * rad, originX: 'center', originY: 'center', isColony: true }));
                 }
             }
             
             const group = new fabric.Group(groupElements, { originX: 'center', originY: 'center' });
             if(isLiquid) group.hasLiquid = true;
+            // Ajout du tag global pour activer le sélecteur
+            if(type === 'colonies') group.hasColonies = true; 
             centerAndAdd(group);
         }
 
@@ -582,6 +630,30 @@
             canvas.renderAll();
             const dataURL = canvas.toDataURL({ format: 'png', multiplier: 2, width: canvas.width, height: canvas.height, backgroundColor: '#ffffff' });
             const link = document.createElement('a'); link.download = 'protocole_microbio.png'; link.href = dataURL; link.click();
+        }
+
+        function exportSVG() {
+            // Désélectionne l'objet actif pour ne pas voir la bordure bleue de sélection sur l'export
+            canvas.discardActiveObject();
+            canvas.renderAll();
+            
+            // Fabric.js génère le code SVG de tout le canevas
+            const svgData = canvas.toSVG({
+                width: canvas.width,
+                height: canvas.height
+            });
+            
+            // Création d'un fichier virtuel (Blob) pour déclencher le téléchargement
+            const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.download = 'protocole_microbio.svg';
+            link.href = url;
+            link.click();
+            
+            // Nettoyage de la mémoire
+            setTimeout(() => URL.revokeObjectURL(url), 100);
         }
 
     </script>
