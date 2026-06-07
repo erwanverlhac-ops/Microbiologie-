@@ -41,19 +41,18 @@
 <body class="h-screen w-screen flex flex-col bg-gray-100 overflow-hidden text-slate-800 font-sans">
 
     <!-- Navbar -->
-    <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 shrink-0 shadow-sm z-10">
-        <div class="flex items-center gap-3">
-            <i data-lucide="flask-conical" class="text-blue-600 w-7 h-7"></i>
-            <h1 class="text-xl font-bold text-slate-800">MicrobioDraw</h1>
-            <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded-md ml-2">V2 - Studio Pro</span>
+    <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 shrink-0 shadow-sm z-10 overflow-x-auto">
+        <div class="flex items-center gap-2 shrink-0 pr-2">
+            <i data-lucide="flask-conical" class="text-blue-600 w-7 h-7" title="MicrobioDraw"></i>
+            <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded-md">V2 Pro</span>
         </div>
-        <div class="flex items-center gap-4">
-            <button onclick="deleteSelected()" class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition" title="Supprimer l'élément (Touche Suppr)">
-                <i data-lucide="trash-2" class="w-4 h-4"></i> Supprimer
+        <div class="flex items-center gap-2 shrink-0">
+            <button onclick="deleteSelected()" class="flex items-center gap-1 px-2 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition" title="Supprimer l'élément (Touche Suppr)">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> <span class="hidden lg:inline">Supprimer</span>
             </button>
-            <div class="w-px h-6 bg-slate-200"></div>
-            <button onclick="confirmClearCanvas()" class="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition">
-                <i data-lucide="eraser" class="w-4 h-4"></i> Effacer tout
+            <div class="w-px h-6 bg-slate-200 hidden lg:block"></div>
+            <button onclick="confirmClearCanvas()" class="flex items-center gap-1 px-2 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition" title="Effacer tout">
+                <i data-lucide="eraser" class="w-4 h-4"></i> <span class="hidden lg:inline">Effacer</span>
             </button>
             
             <div class="w-px h-6 bg-slate-200 mx-1"></div>
