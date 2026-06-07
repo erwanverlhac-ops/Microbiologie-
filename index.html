@@ -5,26 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MicrobioDraw - Éditeur de Protocoles</title>
     
-    <!-- Tailwind CSS pour le style UI -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Fabric.js pour le Canvas 2D vectoriel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-    
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* Grille de repère discrète */
-        .canvas-container-wrapper {
-            background-color: #f8fafc;
-            background-image: 
-                linear-gradient(to right, #e2e8f0 1px, transparent 1px),
-                linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
-            background-size: 20px 20px;
+        /* Zone de dessin défilable avec fond gris */
+        .workspace-wrapper {
+            background-color: #e2e8f0;
+            overflow: auto; /* Permet le scroll sur la grande feuille */
+            position: relative;
         }
         
-        /* Personnalisation de la scrollbar */
+        /* La grande feuille blanche avec grille */
+        .canvas-container-wrapper {
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(to right, #f8fafc 1px, transparent 1px),
+                linear-gradient(to bottom, #f8fafc 1px, transparent 1px);
+            background-size: 20px 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            margin: 2rem auto; /* Centre la feuille avec une marge */
+        }
+        
         .toolbox-scroll::-webkit-scrollbar { width: 6px; }
         .toolbox-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
         .toolbox-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -38,27 +41,27 @@
         <div class="flex items-center gap-3">
             <i data-lucide="flask-conical" class="text-blue-600 w-7 h-7"></i>
             <h1 class="text-xl font-bold text-slate-800">MicrobioDraw</h1>
-            <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded-md ml-2">V2 - Édition Complète</span>
+            <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded-md ml-2">V2 - Studio Pro</span>
         </div>
-        
         <div class="flex items-center gap-4">
             <button onclick="deleteSelected()" class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition" title="Supprimer l'élément (Touche Suppr)">
                 <i data-lucide="trash-2" class="w-4 h-4"></i> Supprimer
             </button>
-            <button onclick="clearCanvas()" class="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition">
+            <div class="w-px h-6 bg-slate-200"></div>
+            <button onclick="confirmClearCanvas()" class="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition">
                 <i data-lucide="eraser" class="w-4 h-4"></i> Effacer tout
             </button>
             
             <div class="w-px h-6 bg-slate-200 mx-1"></div>
             
-            <!-- Contrôles du texte -->
+            <!-- Contrôles Taille de texte -->
             <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-md border border-slate-200">
                 <span class="text-xs font-semibold text-slate-500 px-2 uppercase tracking-wide">Texte</span>
                 <button onclick="changeTextSize(-2)" class="flex items-center justify-center w-7 h-7 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded transition shadow-sm" title="Diminuer la taille"><i data-lucide="minus" class="w-4 h-4"></i></button>
                 <button onclick="changeTextSize(2)" class="flex items-center justify-center w-7 h-7 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded transition shadow-sm" title="Augmenter la taille"><i data-lucide="plus" class="w-4 h-4"></i></button>
             </div>
 
-            <!-- Contrôles de plans (Z-index) -->
+            <!-- Contrôles Z-index -->
             <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-md border border-slate-200">
                 <span class="text-xs font-semibold text-slate-500 px-2 uppercase tracking-wide">Plan</span>
                 <button onclick="moveToFront()" class="flex items-center justify-center w-7 h-7 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded transition shadow-sm" title="Mettre au premier plan"><i data-lucide="arrow-up-to-line" class="w-4 h-4"></i></button>
@@ -67,17 +70,12 @@
 
             <div class="w-px h-6 bg-slate-200 mx-1"></div>
 
-            <!-- Export -->
             <button onclick="exportPNG()" class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition">
                 <i data-lucide="image-down" class="w-4 h-4"></i> Exporter PNG
-            </button>
-            <button onclick="exportSVG()" class="flex items-center gap-2 px-4 py-2 text-sm bg-slate-800 hover:bg-slate-900 text-white rounded-md shadow-sm transition">
-                <i data-lucide="code" class="w-4 h-4"></i> Exporter SVG
             </button>
         </div>
     </header>
 
-    <!-- Zone principale -->
     <main class="flex-1 flex overflow-hidden">
         
         <!-- Sidebar : Boîte à outils -->
@@ -111,21 +109,26 @@
                     <span class="text-xs font-medium text-center">Colonies (Pétri)</span>
                 </button>
 
+                <button onclick="addErlenmeyer()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v6l-6 12a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1l-6-12V2"/><path d="M8 2h8"/><path d="M5 16h14" opacity="0.3" fill="currentColor"/></svg>
+                    <span class="text-xs font-medium text-center">Erlenmeyer</span>
+                </button>
+
+                <button onclick="addBeaker()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3 L6 20 A2 2 0 0 0 8 22 L16 22 A2 2 0 0 0 18 20 L18 3 M5 3 L19 3 M18 5 L20 6 L18 7"/><path d="M6 12 L18 12" stroke-dasharray="2 2"/></svg>
+                    <span class="text-xs font-medium text-center">Bécher</span>
+                </button>
+
                 <button onclick="addStomacherBag()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M5 7h14" stroke-dasharray="2 2"/><path d="M5 14s3-2 7 0 7-2 7 0v5a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-5z" fill="currentColor" opacity="0.3"/></svg>
                     <span class="text-xs font-medium text-center">Sac Stomacher</span>
                 </button>
 
-                <div class="col-span-2 text-xs font-bold text-slate-400 mt-4 mb-1">Instruments & Matériels</div>
+                <div class="col-span-2 text-xs font-bold text-slate-400 mt-4 mb-1">Instruments & Appareils</div>
 
                 <button onclick="addMicropipette()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
-                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M10 7v5h4V7"/><path d="M11 12l-1 6h4l-1-6"/><path d="M11 18l1 4 1-4z" fill="currentColor" opacity="0.3"/><line x1="12" y1="1" x2="12" y2="3"/></svg>
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="10" y="4" width="4" height="12" rx="1"/><path d="M12 2v2"/><path d="M11 16l-1 5a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1l-1-5"/></svg>
                     <span class="text-xs font-medium text-center">Micropipette</span>
-                </button>
-
-                <button onclick="addSpreader()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
-                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v14"/><path d="M7 16h10v4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span class="text-xs font-medium text-center">Étaloir (Râteau)</span>
                 </button>
 
                 <button onclick="addPipette()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
@@ -133,23 +136,38 @@
                     <span class="text-xs font-medium text-center">Pipette graduée</span>
                 </button>
 
+                <button onclick="addPasteurPipette()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="4" rx="3" ry="2"/><path d="M10 6v6l1.5 10h1l1.5-10V6H10z"/></svg>
+                    <span class="text-xs font-medium text-center">Pipette Pasteur</span>
+                </button>
+
                 <button onclick="addPropipette()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><rect x="10" y="14" width="4" height="8" rx="1"/></svg>
                     <span class="text-xs font-medium text-center">Propipette</span>
                 </button>
 
-                <button onclick="addPasteurPipette()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
-                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="4" rx="3" ry="2"/><path d="M10 6v6l1.5 10h1l1.5-10V6H10z"/></svg>
-                    <span class="text-xs font-medium text-center">Pipette Pasteur</span>
+                <button onclick="addSpreader()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22 V8 M8 8 L16 8 M16 8 V5"/></svg>
+                    <span class="text-xs font-medium text-center">Râteau (Étaloir)</span>
+                </button>
+
+                <button onclick="addEppendorf()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 4v12l3 5 3-5V4H9z"/><path d="M7 4h10"/><path d="M17 4c1 0 2-1 2-2H5"/></svg>
+                    <span class="text-xs font-medium text-center">Tube Eppendorf</span>
                 </button>
 
                 <button onclick="addStomacher()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="7" y="7" width="10" height="4" rx="1"/><path d="M7 13h10v5a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-5z" opacity="0.5"/></svg>
                     <span class="text-xs font-medium text-center">Stomacher</span>
                 </button>
-                
+
+                <button onclick="addMicrocentrifuge()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10z"/><path d="M4 10c0-4 4-6 8-6s8 2 8 6"/><circle cx="12" cy="15" r="3" fill="currentColor" opacity="0.3"/></svg>
+                    <span class="text-xs font-medium text-center">Centrifugeuse</span>
+                </button>
+
                 <button onclick="addIncubator()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
-                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><rect x="6" y="8" width="12" height="10" rx="1"/><path d="M9 5h6" stroke-width="3" stroke-linecap="round"/><circle cx="15" cy="13" r="1" fill="currentColor"/></svg>
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><rect x="8" y="6" width="8" height="4" rx="1"/><path d="M6 14h12M6 18h12"/></svg>
                     <span class="text-xs font-medium text-center">Étuve (Incubateur)</span>
                 </button>
 
@@ -166,10 +184,7 @@
                 </button>
 
                 <button onclick="addCurvedArrow()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-emerald-400 hover:bg-emerald-50 transition gap-2 group">
-                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M 6 16 A 6 6 0 0 1 18 16" />
-                        <polyline points="14 12 18 16 22 12" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M 6 16 A 6 6 0 0 1 18 16" /><polyline points="14 12 18 16 22 12" /></svg>
                     <span class="text-xs font-medium text-center">Flèche de transfert</span>
                 </button>
 
@@ -181,48 +196,48 @@
             </div>
         </aside>
 
-        <!-- Canvas Container -->
-        <section id="canvas-container" class="flex-1 relative canvas-container-wrapper w-full h-full">
-            <canvas id="c"></canvas>
-
-            <!-- Modale personnalisée (Remplace alert/prompt/confirm pour plus de modernité) -->
-            <div id="custom-modal" class="hidden absolute inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex items-center justify-center">
-                <div class="bg-white p-6 rounded-lg shadow-xl border border-slate-200 w-80 transform transition-all">
-                    <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-2">Titre</h3>
-                    <p id="modal-text" class="text-sm text-slate-600 mb-4 hidden">Message</p>
-                    <input type="text" id="modal-input" class="w-full border border-slate-300 rounded-md p-2 mb-4 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 hidden" autocomplete="off">
-                    <div class="flex justify-end gap-2">
-                        <button onclick="closeModal()" class="px-4 py-2 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition">Annuler</button>
-                        <button id="modal-confirm-btn" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition shadow-sm">Valider</button>
-                    </div>
-                </div>
+        <!-- Zone de travail avec Scroll (La grande feuille) -->
+        <section class="flex-1 workspace-wrapper" id="workspace">
+            <div class="canvas-container-wrapper" style="width: 2400px; height: 1600px;">
+                <!-- Canvas de très grande taille -->
+                <canvas id="c" width="2400" height="1600"></canvas>
             </div>
         </section>
 
     </main>
 
+    <!-- Modale Personnalisée (Pour remplacer les alert() et prompt()) -->
+    <div id="customModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-80 transform transition-all">
+            <h3 id="modalTitle" class="text-lg font-bold text-slate-800 mb-2">Titre</h3>
+            <div id="modalContent" class="mb-5 text-slate-600 text-sm">Contenu</div>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">Annuler</button>
+                <button id="modalActionBtn" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm">Valider</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         lucide.createIcons();
 
-        // Validation par la touche "Entrée" dans l'input de la modale
-        document.getElementById('modal-input').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') document.getElementById('modal-confirm-btn').click();
-        });
-
+        // Initialisation de Fabric.js avec une grande taille fixe
         const canvas = new fabric.Canvas('c', {
             preserveObjectStacking: true,
             selection: true
         });
 
-        function resizeCanvas() {
-            const container = document.getElementById('canvas-container');
-            canvas.setWidth(container.clientWidth);
-            canvas.setHeight(container.clientHeight);
-            canvas.renderAll();
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        // Apparence globale de sélection
+        fabric.Object.prototype.set({
+            transparentCorners: false,
+            cornerColor: '#3b82f6',
+            cornerStrokeColor: '#2563eb',
+            borderColor: '#3b82f6',
+            cornerSize: 10,
+            padding: 5
+        });
 
+        // Supprimer via clavier
         window.addEventListener('keydown', function(e) {
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 const activeObj = canvas.getActiveObject();
@@ -239,119 +254,62 @@
             }
         }
 
-        // --- GESTION DE LA MODALE SUR-MESURE ---
-        let modalCallback = null;
+        // --- GESTION DE LA MODALE ---
+        const modal = document.getElementById('customModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalContent = document.getElementById('modalContent');
+        const modalActionBtn = document.getElementById('modalActionBtn');
+        let currentModalAction = null;
 
-        function showModal(options) {
-            document.getElementById('custom-modal').classList.remove('hidden');
-            document.getElementById('modal-title').innerText = options.title;
+        function openModal(title, htmlContent, buttonText, buttonClass, actionCallback) {
+            modalTitle.innerText = title;
+            modalContent.innerHTML = htmlContent;
+            modalActionBtn.innerText = buttonText;
+            modalActionBtn.className = `px-4 py-2 text-sm font-medium text-white rounded-lg transition shadow-sm ${buttonClass}`;
             
-            const textEl = document.getElementById('modal-text');
-            if(options.text) { textEl.innerText = options.text; textEl.classList.remove('hidden'); }
-            else { textEl.classList.add('hidden'); }
-
-            const inputEl = document.getElementById('modal-input');
-            if(options.isInput) { 
-                inputEl.value = options.inputValue || ''; 
-                inputEl.classList.remove('hidden'); 
-                inputEl.focus(); // Focus automatique sur le champ texte
-            } else { 
-                inputEl.classList.add('hidden'); 
-            }
-
-            const confirmBtn = document.getElementById('modal-confirm-btn');
-            confirmBtn.innerText = options.btnText || 'Valider';
-            confirmBtn.className = options.btnClass || 'px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md transition shadow-sm';
+            modal.classList.remove('hidden');
             
-            confirmBtn.onclick = function() {
-                const val = inputEl.value;
+            // Remplace l'ancien écouteur d'événement proprement
+            modalActionBtn.onclick = () => {
+                if (actionCallback) actionCallback();
                 closeModal();
-                if(modalCallback) modalCallback(options.isInput ? val : true);
             };
         }
 
         function closeModal() {
-            document.getElementById('custom-modal').classList.add('hidden');
-            modalCallback = null;
+            modal.classList.add('hidden');
         }
 
-        function clearCanvas() {
-            modalCallback = function(confirmed) {
-                if(confirmed) canvas.clear();
-            };
-            showModal({
-                title: 'Effacer le schéma',
-                text: 'Êtes-vous sûr de vouloir tout effacer ? Cette action est irréversible.',
-                btnText: 'Effacer',
-                btnClass: 'px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-md transition shadow-sm'
-            });
+        function confirmClearCanvas() {
+            openModal(
+                "Effacer le tableau",
+                "Êtes-vous sûr de vouloir supprimer tous les éléments ? Cette action est irréversible.",
+                "Tout effacer",
+                "bg-red-600 hover:bg-red-700",
+                () => canvas.clear()
+            );
         }
 
-        // --- INTERACTION DOUBLE-CLIC ---
-        canvas.on('mouse:dblclick', function(options) {
-            // Si on double-clique sur l'étuve, on modifie sa température
-            if (options.target && options.target.isIncubator) {
-                const textObj = options.target.getObjects().find(obj => obj.type === 'text');
-                if (textObj) {
-                    modalCallback = function(newTemp) {
-                        if (newTemp !== null && newTemp.trim() !== "") {
-                            textObj.set('text', newTemp);
-                            options.target.set('dirty', true); // Force le redessin du groupe par FabricJS
-                            canvas.renderAll();
-                        }
-                    };
-                    showModal({
-                        title: "Température de l'étuve (°C)",
-                        isInput: true,
-                        inputValue: textObj.text,
-                        btnText: 'Enregistrer'
-                    });
-                }
-            }
-        });
-
-        fabric.Object.prototype.set({
-            transparentCorners: false,
-            cornerColor: '#3b82f6',
-            cornerStrokeColor: '#2563eb',
-            borderColor: '#3b82f6',
-            cornerSize: 10,
-            padding: 5
-        });
-
+        // --- UTILITAIRES CANVAS ---
+        // Placer un objet au centre de la vue courante (scrolling)
         function centerAndAdd(obj) {
+            const workspace = document.getElementById('workspace');
+            const scrollLeft = workspace.scrollLeft;
+            const scrollTop = workspace.scrollTop;
+            const visibleWidth = workspace.clientWidth;
+            const visibleHeight = workspace.clientHeight;
+
+            obj.set({
+                left: scrollLeft + (visibleWidth / 2),
+                top: scrollTop + (visibleHeight / 2)
+            });
+
             canvas.add(obj);
-            obj.center();
             canvas.setActiveObject(obj);
             canvas.renderAll();
         }
 
-        // --- FONCTIONS UI ---
-        function changeTextSize(delta) {
-            const activeObj = canvas.getActiveObject();
-            if (!activeObj) return;
-
-            if (activeObj.type === 'i-text' || activeObj.type === 'text') {
-                let newSize = activeObj.fontSize + delta;
-                if (newSize < 8) newSize = 8;
-                if (newSize > 120) newSize = 120;
-                activeObj.set('fontSize', newSize);
-                canvas.renderAll();
-            } else if (activeObj.type === 'activeSelection') {
-                let changed = false;
-                activeObj.forEachObject(obj => {
-                    if (obj.type === 'i-text' || obj.type === 'text') {
-                        let newSize = obj.fontSize + delta;
-                        if (newSize < 8) newSize = 8;
-                        if (newSize > 120) newSize = 120;
-                        obj.set('fontSize', newSize);
-                        changed = true;
-                    }
-                });
-                if (changed) canvas.renderAll();
-            }
-        }
-
+        // Gestion de l'ordre d'affichage (Plans)
         function moveToFront() {
             const activeObj = canvas.getActiveObject();
             if (activeObj) {
@@ -370,56 +328,43 @@
             }
         }
 
-        // --- OUTILS ANNOTATIONS ---
+        // --- STREAMING_CHUNK:Génération des annotations... ---
         function addText() {
-            const text = new fabric.IText('Texte modifiable', {
-                fontFamily: 'sans-serif', fontSize: 20, fill: '#1e293b', fontWeight: 'bold'
-            });
+            const text = new fabric.IText('Texte modifiable', { fontFamily: 'sans-serif', fontSize: 24, fill: '#1e293b', fontWeight: 'bold' });
             centerAndAdd(text);
         }
 
+        function changeTextSize(delta) {
+            const activeObj = canvas.getActiveObject();
+            if (!activeObj) return;
+
+            if (activeObj.type === 'i-text' || activeObj.type === 'text') {
+                let newSize = Math.max(8, Math.min(120, activeObj.fontSize + delta));
+                activeObj.set('fontSize', newSize);
+                canvas.renderAll();
+            } else if (activeObj.type === 'activeSelection') {
+                activeObj.forEachObject(obj => {
+                    if (obj.type === 'i-text' || obj.type === 'text') {
+                        obj.set('fontSize', Math.max(8, Math.min(120, obj.fontSize + delta)));
+                    }
+                });
+                canvas.renderAll();
+            }
+        }
+
         function addArrow() {
-            const line = new fabric.Line([0, 0, 100, 0], { stroke: '#1e293b', strokeWidth: 3, originX: 'center', originY: 'center' });
-            const head = new fabric.Triangle({ width: 15, height: 15, fill: '#1e293b', left: 50, top: 0, originX: 'center', originY: 'center', angle: 90 });
+            const line = new fabric.Line([0, 0, 100, 0], { stroke: '#1e293b', strokeWidth: 4, originX: 'center', originY: 'center' });
+            const head = new fabric.Triangle({ width: 18, height: 18, fill: '#1e293b', left: 50, top: 0, originX: 'center', originY: 'center', angle: 90 });
             centerAndAdd(new fabric.Group([line, head], { originX: 'center', originY: 'center' }));
         }
 
         function addCurvedArrow() {
             const curve = new fabric.Path('M 0 50 A 50 50 0 0 1 100 50', { fill: 'transparent', stroke: '#1e293b', strokeWidth: 3 });
-            const head = new fabric.Triangle({ width: 16, height: 16, fill: '#1e293b', left: 100, top: 50, originX: 'center', originY: 'bottom', angle: 180 });
+            const head = new fabric.Triangle({ width: 18, height: 18, fill: '#1e293b', left: 100, top: 50, originX: 'center', originY: 'bottom', angle: 180 });
             centerAndAdd(new fabric.Group([curve, head], { originX: 'center', originY: 'center' }));
         }
 
-        // --- OUTILS LABORATOIRE ---
-        function addPetri(type) {
-            const groupElements = [];
-            const dishBase = new fabric.Circle({ radius: 42, fill: '#cbd5e1', originX: 'center', originY: 'center', top: 2, left: 2 });
-            const dish = new fabric.Circle({ radius: 40, fill: 'rgba(255, 255, 255, 0.8)', stroke: '#94a3b8', strokeWidth: 2, originX: 'center', originY: 'center' });
-            const innerRim = new fabric.Circle({ radius: 38, fill: 'transparent', stroke: '#cbd5e1', strokeWidth: 1, originX: 'center', originY: 'center' });
-            groupElements.push(dishBase, dish, innerRim);
-
-            if (type === 'agar' || type === 'colonies') {
-                const agar = new fabric.Circle({ radius: 37, fill: 'rgba(253, 224, 71, 0.6)', originX: 'center', originY: 'center' });
-                groupElements.push(agar);
-            }
-
-            if (type === 'colonies') {
-                const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#22c55e', '#d946ef'];
-                for(let i=0; i<15; i++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const rad = Math.random() * 30;
-                    const col = new fabric.Circle({
-                        radius: Math.random() * 2.5 + 1.5,
-                        fill: colors[Math.floor(Math.random() * colors.length)],
-                        left: Math.cos(angle) * rad, top: Math.sin(angle) * rad,
-                        originX: 'center', originY: 'center'
-                    });
-                    groupElements.push(col);
-                }
-            }
-            centerAndAdd(new fabric.Group(groupElements, { originX: 'center', originY: 'center' }));
-        }
-
+        // --- STREAMING_CHUNK:Génération des contenants (Tubes, Pétri, Bécher, Erlenmeyer)... ---
         function addTube() {
             const tubeBody = new fabric.Path('M 5 0 L 5 80 A 15 15 0 0 0 35 80 L 35 0', { fill: 'rgba(248, 250, 252, 0.4)', stroke: '#64748b', strokeWidth: 2 });
             const liquid = new fabric.Path('M 7 40 L 7 80 A 13 13 0 0 0 33 80 L 33 40 Q 20 45 7 40 Z', { fill: 'rgba(56, 189, 248, 0.5)', stroke: 'transparent' });
@@ -428,33 +373,95 @@
             centerAndAdd(new fabric.Group([tubeBody, liquid, rimOuter, rimInner], { originX: 'center', originY: 'center' }));
         }
 
+        function addPetri(type) {
+            const groupElements = [];
+            const dishBase = new fabric.Circle({ radius: 42, fill: '#cbd5e1', originX: 'center', originY: 'center', top: 3, left: 3 });
+            const dish = new fabric.Circle({ radius: 40, fill: 'rgba(255, 255, 255, 0.9)', stroke: '#94a3b8', strokeWidth: 2, originX: 'center', originY: 'center' });
+            const innerRim = new fabric.Circle({ radius: 38, fill: 'transparent', stroke: '#cbd5e1', strokeWidth: 1, originX: 'center', originY: 'center' });
+            
+            groupElements.push(dishBase, dish, innerRim);
+
+            if (type === 'agar' || type === 'colonies') {
+                groupElements.push(new fabric.Circle({ radius: 37, fill: 'rgba(253, 224, 71, 0.6)', originX: 'center', originY: 'center' }));
+            }
+
+            if (type === 'colonies') {
+                const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#22c55e', '#d946ef'];
+                for(let i=0; i<15; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const rad = Math.random() * 28;
+                    groupElements.push(new fabric.Circle({
+                        radius: Math.random() * 2.5 + 1.5,
+                        fill: colors[Math.floor(Math.random() * colors.length)],
+                        left: Math.cos(angle) * rad, top: Math.sin(angle) * rad, originX: 'center', originY: 'center'
+                    }));
+                }
+            }
+            centerAndAdd(new fabric.Group(groupElements, { originX: 'center', originY: 'center' }));
+        }
+
+        function addErlenmeyer() {
+            // Corps de l'erlenmeyer (trapèze avec col)
+            const body = new fabric.Path('M -10 -50 L 10 -50 L 10 -20 L 40 50 A 5 5 0 0 1 35 55 L -35 55 A 5 5 0 0 1 -40 50 L -10 -20 Z', { fill: 'rgba(248, 250, 252, 0.6)', stroke: '#64748b', strokeWidth: 2, originX: 'center', originY: 'center' });
+            // Liquide
+            const liquid = new fabric.Path('M -18 0 L 18 0 L 38 48 A 4 4 0 0 1 34 53 L -34 53 A 4 4 0 0 1 -38 48 Z', { fill: 'rgba(56, 189, 248, 0.4)', stroke: 'transparent', originX: 'center', originY: 'center', top: 15 });
+            // Ouverture
+            const rim = new fabric.Ellipse({ rx: 12, ry: 4, top: -50, fill: 'rgba(255, 255, 255, 0.9)', stroke: '#64748b', strokeWidth: 2, originX: 'center', originY: 'center' });
+            centerAndAdd(new fabric.Group([body, liquid, rim], { originX: 'center', originY: 'center' }));
+        }
+
+        function addBeaker() {
+            const body = new fabric.Rect({ width: 70, height: 90, fill: 'rgba(248, 250, 252, 0.6)', stroke: '#64748b', strokeWidth: 2, rx: 4, originX: 'center', originY: 'center' });
+            // Bec verseur
+            const spout = new fabric.Path('M -35 -45 L -45 -45 L -35 -35 Z', { fill: 'rgba(248, 250, 252, 0.6)', stroke: '#64748b', strokeWidth: 2, originX: 'center', originY: 'center' });
+            const liquid = new fabric.Rect({ width: 66, height: 60, fill: 'rgba(56, 189, 248, 0.4)', rx: 2, originX: 'center', originY: 'center', top: 14 });
+            // Graduations
+            const marks = [];
+            for(let i=0; i<4; i++) marks.push(new fabric.Line([-35, 10 - i*15, -25, 10 - i*15], { stroke: '#64748b', strokeWidth: 1.5, originX: 'center', originY: 'center' }));
+            
+            centerAndAdd(new fabric.Group([spout, body, liquid, ...marks], { originX: 'center', originY: 'center' }));
+        }
+
         function addStomacherBag() {
-            const bag = new fabric.Rect({ width: 70, height: 100, fill: 'rgba(255, 255, 255, 0.7)', stroke: '#64748b', strokeWidth: 2, rx: 4, originX: 'center', originY: 'center' });
+            const bag = new fabric.Rect({ width: 70, height: 100, fill: 'rgba(255, 255, 255, 0.8)', stroke: '#64748b', strokeWidth: 2, rx: 4, originX: 'center', originY: 'center' });
             const seal = new fabric.Line([-35, -30, 35, -30], { stroke: '#64748b', strokeWidth: 1.5, strokeDashArray: [4, 4], originX: 'center', originY: 'center' });
             const liquid = new fabric.Path('M -34 10 L 34 10 L 34 45 A 3 3 0 0 1 31 48 L -31 48 A 3 3 0 0 1 -34 45 Z', { fill: 'rgba(253, 224, 71, 0.4)', originX: 'center', originY: 'center' });
             centerAndAdd(new fabric.Group([bag, seal, liquid], { originX: 'center', originY: 'center' }));
         }
 
-        // --- INSTRUMENTS ---
+        // --- STREAMING_CHUNK:Génération des instruments (Pipettes, Eppendorf, Centrifugeuse, Étuve)... ---
+        function addEppendorf() {
+            // Corps conique
+            const body = new fabric.Path('M -10 -20 L 10 -20 L 10 5 L 2 25 A 2 2 0 0 1 -2 25 L -10 5 Z', { fill: 'rgba(241, 245, 249, 0.8)', stroke: '#475569', strokeWidth: 2, originX: 'center', originY: 'center' });
+            // Petit capuchon ouvert sur le côté
+            const cap = new fabric.Path('M -10 -20 L -25 -25 L -25 -28 L -10 -23 Z', { fill: '#cbd5e1', stroke: '#475569', strokeWidth: 2, originX: 'center', originY: 'center' });
+            const rim = new fabric.Ellipse({ rx: 11, ry: 3, top: -20, fill: '#f8fafc', stroke: '#475569', strokeWidth: 2, originX: 'center', originY: 'center' });
+            const liquid = new fabric.Path('M -8 5 L 8 5 L 2 22 A 2 2 0 0 1 -2 22 Z', { fill: 'rgba(56, 189, 248, 0.5)', originX: 'center', originY: 'center', top: 5 });
+            centerAndAdd(new fabric.Group([cap, body, liquid, rim], { originX: 'center', originY: 'center' }));
+        }
+
+        function addMicropipette() {
+            const topBtn = new fabric.Rect({ width: 14, height: 10, fill: '#3b82f6', stroke: '#1e3a8a', strokeWidth: 2, top: -75, rx: 2, originX: 'center', originY: 'center' });
+            const handle = new fabric.Rect({ width: 22, height: 60, fill: '#f1f5f9', stroke: '#475569', strokeWidth: 2, top: -40, rx: 4, originX: 'center', originY: 'center' });
+            // Ecran digital du volume
+            const screen = new fabric.Rect({ width: 14, height: 20, fill: '#0f172a', top: -45, rx: 1, originX: 'center', originY: 'center' });
+            const volText = new fabric.Text('100', { fontSize: 10, fill: '#10b981', top: -45, fontFamily: 'monospace', originX: 'center', originY: 'center' });
+            
+            const lowerBody = new fabric.Path('M -8 -10 L 8 -10 L 4 30 L -4 30 Z', { fill: '#e2e8f0', stroke: '#475569', strokeWidth: 2, originX: 'center', originY: 'center' });
+            const tip = new fabric.Triangle({ width: 8, height: 25, fill: '#bfdbfe', stroke: '#3b82f6', strokeWidth: 1.5, angle: 180, top: 40, originX: 'center', originY: 'center' });
+            
+            centerAndAdd(new fabric.Group([topBtn, handle, screen, volText, lowerBody, tip], { originX: 'center', originY: 'center' }));
+        }
+
         function addPipette() {
             const body = new fabric.Rect({ width: 14, height: 160, fill: 'rgba(241, 245, 249, 0.8)', stroke: '#475569', strokeWidth: 2, rx: 3, originX: 'center', originY: 'center' });
             const tip = new fabric.Triangle({ width: 14, height: 25, fill: 'rgba(241, 245, 249, 0.8)', stroke: '#475569', strokeWidth: 2, angle: 180, top: 92.5, originX: 'center', originY: 'center' });
             const groupElements = [body, tip];
             for(let i=0; i<12; i++) {
                 const markWidth = i % 2 === 0 ? 8 : 4;
-                const mark = new fabric.Line([-7, -60 + i*10, -7 + markWidth, -60 + i*10], { stroke: '#334155', strokeWidth: 1.5, originX: 'center', originY: 'center' });
-                groupElements.push(mark);
+                groupElements.push(new fabric.Line([-7, -60 + i*10, -7 + markWidth, -60 + i*10], { stroke: '#334155', strokeWidth: 1.5, originX: 'center', originY: 'center' }));
             }
             centerAndAdd(new fabric.Group(groupElements, { originX: 'center', originY: 'center' }));
-        }
-
-        function addPropipette() {
-            const bulbShadow = new fabric.Ellipse({ rx: 27, ry: 37, fill: '#991b1b', top: 2, left: 2, originX: 'center', originY: 'center' });
-            const bulb = new fabric.Ellipse({ rx: 26, ry: 36, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 2, originX: 'center', originY: 'center' });
-            const highlight = new fabric.Ellipse({ rx: 8, ry: 12, fill: 'rgba(255,255,255,0.4)', top: -15, left: -10, originX: 'center', originY: 'center', angle: -20 });
-            const bottomValv = new fabric.Rect({ width: 16, height: 24, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 2, top: 40, rx: 4, originX: 'center', originY: 'center' });
-            const sideValv = new fabric.Circle({ radius: 10, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 2, left: 24, top: -12, originX: 'center', originY: 'center' });
-            centerAndAdd(new fabric.Group([bulbShadow, bulb, highlight, bottomValv, sideValv], { originX: 'center', originY: 'center' }));
         }
 
         function addPasteurPipette() {
@@ -463,100 +470,102 @@
             centerAndAdd(new fabric.Group([glass, bulb], { originX: 'center', originY: 'center' }));
         }
 
+        function addPropipette() {
+            const bulbShadow = new fabric.Ellipse({ rx: 27, ry: 37, fill: '#991b1b', top: 2, left: 2, originX: 'center', originY: 'center' });
+            const bulb = new fabric.Ellipse({ rx: 26, ry: 36, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 2, originX: 'center', originY: 'center' });
+            const bottomValv = new fabric.Rect({ width: 16, height: 24, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 2, top: 40, rx: 4, originX: 'center', originY: 'center' });
+            const sideValv = new fabric.Circle({ radius: 10, fill: '#ef4444', stroke: '#7f1d1d', strokeWidth: 2, left: 24, top: -12, originX: 'center', originY: 'center' });
+            centerAndAdd(new fabric.Group([bulbShadow, bulb, bottomValv, sideValv], { originX: 'center', originY: 'center' }));
+        }
+
+        function addSpreader() {
+            // Râteau de Drigalski en verre (Triangle plié)
+            const handle = new fabric.Rect({ width: 6, height: 80, fill: 'rgba(241, 245, 249, 0.9)', stroke: '#475569', strokeWidth: 2, rx: 3, top: -20, originX: 'center', originY: 'center' });
+            const base = new fabric.Rect({ width: 40, height: 6, fill: 'rgba(241, 245, 249, 0.9)', stroke: '#475569', strokeWidth: 2, rx: 3, top: 20, originX: 'center', originY: 'center' });
+            centerAndAdd(new fabric.Group([handle, base], { originX: 'center', originY: 'center' }));
+        }
+
         function addStomacher() {
             const chassis = new fabric.Rect({ width: 110, height: 130, fill: '#cbd5e1', stroke: '#334155', strokeWidth: 2, rx: 8, originX: 'center', originY: 'center' });
             const innerPanel = new fabric.Rect({ width: 90, height: 110, fill: '#e2e8f0', top: 5, rx: 4, originX: 'center', originY: 'center' });
-            const screen = new fabric.Rect({ width: 50, height: 20, fill: '#0f172a', rx: 2, top: -35, originX: 'center', originY: 'center' });
             const door = new fabric.Rect({ width: 80, height: 75, fill: 'rgba(255,255,255,0.7)', stroke: '#94a3b8', strokeWidth: 2, rx: 4, top: 20, originX: 'center', originY: 'center' });
             const bag = new fabric.Path('M -25 -20 L 25 -20 L 30 30 L -30 30 Z', { fill: 'rgba(186, 230, 253, 0.5)', stroke: '#0284c7', strokeWidth: 1.5, top: 20, originX: 'center', originY: 'center' });
             const liquid = new fabric.Path('M -28 5 L 28 5 L 30 30 L -30 30 Z', { fill: 'rgba(253, 224, 71, 0.7)', top: 20, originX: 'center', originY: 'center' });
-            centerAndAdd(new fabric.Group([chassis, innerPanel, screen, door, bag, liquid], { originX: 'center', originY: 'center' }));
+            centerAndAdd(new fabric.Group([chassis, innerPanel, door, bag, liquid], { originX: 'center', originY: 'center' }));
+        }
+
+        function addMicrocentrifuge() {
+            // Boîtier base
+            const base = new fabric.Rect({ width: 120, height: 70, fill: '#e2e8f0', stroke: '#64748b', strokeWidth: 2, rx: 8, top: 20, originX: 'center', originY: 'center' });
+            // Couvercle dôme translucide
+            const lid = new fabric.Path('M -55 20 C -55 -30, 55 -30, 55 20', { fill: 'rgba(56, 189, 248, 0.2)', stroke: '#38bdf8', strokeWidth: 2, originX: 'center', originY: 'center', top: -5 });
+            // Rotor visible à l'intérieur
+            const rotor = new fabric.Circle({ radius: 30, fill: '#cbd5e1', stroke: '#94a3b8', strokeWidth: 2, top: 10, originX: 'center', originY: 'center' });
+            const centerPin = new fabric.Circle({ radius: 4, fill: '#475569', top: 10, originX: 'center', originY: 'center' });
+            // Bouton et écran
+            const screen = new fabric.Rect({ width: 30, height: 14, fill: '#0f172a', rx: 2, top: 40, left: -20, originX: 'center', originY: 'center' });
+            const btn = new fabric.Circle({ radius: 6, fill: '#ef4444', top: 40, left: 25, originX: 'center', originY: 'center' });
+            
+            centerAndAdd(new fabric.Group([lid, base, rotor, centerPin, screen, btn], { originX: 'center', originY: 'center' }));
         }
 
         function addBunsenBurner() {
             const base = new fabric.Path('M -20 40 L 20 40 L 15 30 L -15 30 Z', { fill: '#334155', stroke: '#1e293b', strokeWidth: 2, originX: 'center', originY: 'center' });
             const pipe = new fabric.Rect({ width: 14, height: 40, fill: '#94a3b8', stroke: '#475569', strokeWidth: 2, top: 10, originX: 'center', originY: 'center' });
-            const collar = new fabric.Rect({ width: 18, height: 10, fill: '#cbd5e1', stroke: '#475569', strokeWidth: 2, top: 20, rx: 1, originX: 'center', originY: 'center' });
-            const hoseConnector = new fabric.Rect({ width: 12, height: 6, fill: '#94a3b8', stroke: '#475569', strokeWidth: 2, top: 25, left: 10, originX: 'center', originY: 'center' }); 
             const flameOuter = new fabric.Path('M 0 0 Q -12 -15 0 -35 Q 12 -15 0 0', { fill: 'rgba(249, 115, 22, 0.7)', originX: 'center', originY: 'center', top: -27 });
             const flameInner = new fabric.Path('M 0 0 Q -6 -8 0 -20 Q 6 -8 0 0', { fill: 'rgba(56, 189, 248, 0.9)', originX: 'center', originY: 'center', top: -20 });
-            centerAndAdd(new fabric.Group([hoseConnector, base, pipe, collar, flameOuter, flameInner], { originX: 'center', originY: 'center' }));
-        }
-        
-        // Micropipette (Eppendorf)
-        function addMicropipette() {
-            // Bouton poussoir
-            const plunger = new fabric.Rect({ width: 14, height: 15, fill: '#cbd5e1', stroke: '#475569', strokeWidth: 2, top: -75, rx: 2, originX: 'center', originY: 'center' });
-            // Haut du corps
-            const topBody = new fabric.Rect({ width: 26, height: 40, fill: '#f1f5f9', stroke: '#475569', strokeWidth: 2, top: -50, rx: 3, originX: 'center', originY: 'center' });
-            // Écran de volume (jaune/vert)
-            const volumeScreen = new fabric.Rect({ width: 14, height: 20, fill: '#bef264', stroke: '#475569', strokeWidth: 1.5, top: -50, originX: 'center', originY: 'center' });
-            // Bas du corps
-            const bottomBody = new fabric.Path('M -10 -20 L 10 -20 L 4 30 L -4 30 Z', { fill: '#e2e8f0', stroke: '#475569', strokeWidth: 2, top: 5, originX: 'center', originY: 'center' });
-            // Cône jetable
-            const tip = new fabric.Path('M -4 0 L 4 0 L 1 35 L -1 35 Z', { fill: 'rgba(186, 230, 253, 0.4)', stroke: '#38bdf8', strokeWidth: 1.5, top: 40, originX: 'center', originY: 'center' });
-
-            centerAndAdd(new fabric.Group([plunger, topBody, volumeScreen, bottomBody, tip], { originX: 'center', originY: 'center' }));
+            centerAndAdd(new fabric.Group([base, pipe, flameOuter, flameInner], { originX: 'center', originY: 'center' }));
         }
 
-        // Étaloir / Râteau (Drigalski)
-        function addSpreader() {
-            // Manche
-            const handle = new fabric.Rect({ width: 6, height: 80, fill: 'rgba(241, 245, 249, 0.8)', stroke: '#64748b', strokeWidth: 2, top: -20, rx: 3, originX: 'center', originY: 'center' });
-            // Râteau horizontal
-            const crossbar = new fabric.Rect({ width: 50, height: 6, fill: 'rgba(241, 245, 249, 0.8)', stroke: '#64748b', strokeWidth: 2, top: 20, rx: 3, originX: 'center', originY: 'center' });
-            // Bout recourbé
-            const endCurve = new fabric.Rect({ width: 6, height: 15, fill: 'rgba(241, 245, 249, 0.8)', stroke: '#64748b', strokeWidth: 2, top: 15, left: 22, rx: 3, originX: 'center', originY: 'center' });
-
-            centerAndAdd(new fabric.Group([handle, crossbar, endCurve], { originX: 'center', originY: 'center' }));
-        }
-
-        // Étuve (Incubateur)
+        // Étuve avec gestion du double-clic
         function addIncubator() {
-            // Boîtier principal
-            const chassis = new fabric.Rect({ width: 140, height: 160, fill: '#f8fafc', stroke: '#475569', strokeWidth: 2, rx: 4, originX: 'center', originY: 'center' });
-            // Panneau supérieur
-            const controlPanel = new fabric.Rect({ width: 140, height: 30, fill: '#e2e8f0', stroke: '#475569', strokeWidth: 2, top: -65, originX: 'center', originY: 'center' });
-            // Écran digital rouge
-            const display = new fabric.Rect({ width: 40, height: 16, fill: '#0f172a', rx: 2, top: -65, left: -30, originX: 'center', originY: 'center' });
-            const tempText = new fabric.Text('37.0', { fontFamily: 'monospace', fontSize: 12, fill: '#ef4444', top: -65, left: -30, originX: 'center', originY: 'center' });
-            // Boutons
-            const btn1 = new fabric.Circle({ radius: 4, fill: '#94a3b8', stroke: '#475569', strokeWidth: 1, top: -65, left: 10, originX: 'center', originY: 'center' });
-            const btn2 = new fabric.Circle({ radius: 4, fill: '#94a3b8', stroke: '#475569', strokeWidth: 1, top: -65, left: 25, originX: 'center', originY: 'center' });
-            // Porte vitrée
-            const door = new fabric.Rect({ width: 110, height: 100, fill: 'rgba(186, 230, 253, 0.2)', stroke: '#94a3b8', strokeWidth: 2, rx: 2, top: 15, originX: 'center', originY: 'center' });
-            // Poignée de porte
-            const handle = new fabric.Rect({ width: 8, height: 40, fill: '#cbd5e1', stroke: '#64748b', strokeWidth: 1, rx: 2, top: 15, left: 45, originX: 'center', originY: 'center' });
-            // Étagère grille intérieure
-            const shelf = new fabric.Line([-45, 25, 45, 25], { stroke: '#cbd5e1', strokeWidth: 2, strokeDashArray: [2, 2], originX: 'center', originY: 'center' });
+            const box = new fabric.Rect({ width: 140, height: 180, fill: '#f8fafc', stroke: '#64748b', strokeWidth: 3, rx: 8, originX: 'center', originY: 'center' });
+            const innerGlass = new fabric.Rect({ width: 100, height: 120, fill: 'rgba(56, 189, 248, 0.1)', stroke: '#94a3b8', strokeWidth: 2, top: 10, rx: 4, originX: 'center', originY: 'center' });
+            const screenBg = new fabric.Rect({ width: 60, height: 26, fill: '#0f172a', top: -65, rx: 3, originX: 'center', originY: 'center' });
+            
+            const tempText = new fabric.Text('37.0', { 
+                fontSize: 22, fill: '#ef4444', top: -65, fontFamily: 'monospace', fontWeight: 'bold', originX: 'center', originY: 'center' 
+            });
 
-            const incubatorGroup = new fabric.Group([chassis, controlPanel, display, tempText, btn1, btn2, door, handle, shelf], { originX: 'center', originY: 'center' });
+            const group = new fabric.Group([box, innerGlass, screenBg, tempText], { originX: 'center', originY: 'center' });
             
-            // On ajoute une balise personnalisée au groupe pour le détecter au double-clic
-            incubatorGroup.set({ isIncubator: true }); 
-            
-            centerAndAdd(incubatorGroup);
+            // Interaction Modale au double clic
+            group.on('mousedblclick', () => {
+                const inputHtml = `<label class="block text-xs font-bold mb-1">Température (°C)</label>
+                                   <input type="number" id="tempInput" step="0.5" value="${tempText.text}" class="w-full border border-slate-300 rounded p-2 focus:border-blue-500 outline-none">`;
+                
+                openModal("Réglage de l'Étuve", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
+                    const newVal = document.getElementById('tempInput').value;
+                    if(newVal) {
+                        tempText.set('text', newVal);
+                        canvas.renderAll();
+                    }
+                });
+            });
+
+            centerAndAdd(group);
         }
 
-        // --- EXPORTATION ---
+        // --- STREAMING_CHUNK:Fonctions d'exportation... ---
         function exportPNG() {
             canvas.discardActiveObject();
             canvas.renderAll();
+            
+            const dataURL = canvas.toDataURL({
+                format: 'png',
+                multiplier: 2, // Haute résolution
+                // On exporte uniquement la zone contenant des objets pour éviter de télécharger 2400px de blanc si le schéma est petit
+                width: canvas.width, 
+                height: canvas.height,
+                backgroundColor: '#ffffff'
+            });
+
             const link = document.createElement('a');
             link.download = 'protocole_microbio.png';
-            link.href = canvas.toDataURL({ format: 'png', multiplier: 2, backgroundColor: '#ffffff' });
+            link.href = dataURL;
             link.click();
         }
 
-        function exportSVG() {
-            canvas.discardActiveObject();
-            canvas.renderAll();
-            const blob = new Blob([canvas.toSVG()], {type: "image/svg+xml;charset=utf-8"});
-            const link = document.createElement('a');
-            link.download = 'protocole_microbio.svg';
-            link.href = URL.createObjectURL(blob);
-            link.click();
-        }
     </script>
 </body>
 </html>
