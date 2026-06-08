@@ -124,6 +124,17 @@
                     <span class="text-xs font-medium text-center">Tube à essai</span>
                 </button>
 
+                <!-- NOUVEAU : Portoir de tubes et Bouchon -->
+                <button onclick="addTubeRack()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z" fill="currentColor" opacity="0.2"/><path d="M4 14h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/><path d="M4 10h16"/><path d="M6 4v10 M12 4v10 M18 4v10"/><path d="M5 4h2 M11 4h2 M17 4h2"/></svg>
+                    <span class="text-xs font-medium text-center">Portoir (Tubes)</span>
+                </button>
+
+                <button onclick="addTubeCap()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h12l-2 12H8z" fill="currentColor" opacity="0.3"/><path d="M6 4h12l-2 12H8z"/><path d="M5 4h14"/></svg>
+                    <span class="text-xs font-medium text-center">Bouchon</span>
+                </button>
+
                 <button onclick="addPetri('empty')" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="8" opacity="0.2"/></svg>
                     <span class="text-xs font-medium text-center">Pétri vierge</span>
@@ -507,6 +518,81 @@
             centerAndAdd(group);
         }
 
+        // --- NOUVEAU : Portoir et Bouchon ---
+        function createRackGroup(numTubes) {
+            const objects = [];
+            const spacing = 40;
+            const rackWidth = (numTubes * spacing) + 20;
+
+            // Panneau arrière du portoir
+            const backPlate = new fabric.Rect({ width: rackWidth, height: 50, fill: 'rgba(203, 213, 225, 0.6)', stroke: '#94a3b8', strokeWidth: 2, top: 40, left: 0 });
+            objects.push(backPlate);
+
+            // Création dynamique des tubes
+            for(let i=0; i<numTubes; i++) {
+                const offsetX = 15 + i * spacing;
+                const tubeBody = new fabric.Path('M 0 0 L 0 80 A 15 15 0 0 0 30 80 L 30 0', { fill: 'rgba(248, 250, 252, 0.7)', stroke: '#64748b', strokeWidth: 2, left: offsetX, top: 10 });
+                const rimOuter = new fabric.Ellipse({ rx: 18, ry: 6, fill: 'rgba(255, 255, 255, 0.9)', stroke: '#64748b', strokeWidth: 2, left: offsetX - 3, top: 4 });
+                const rimInner = new fabric.Ellipse({ rx: 13, ry: 3, fill: '#e2e8f0', left: offsetX + 2, top: 7 });
+                objects.push(tubeBody, rimOuter, rimInner);
+            }
+
+            // Barres avant du portoir pour maintenir les tubes
+            const frontBar1 = new fabric.Rect({ width: rackWidth, height: 12, fill: '#94a3b8', stroke: '#64748b', strokeWidth: 2, top: 60, left: 0, rx: 2 });
+            const frontBar2 = new fabric.Rect({ width: rackWidth, height: 18, fill: '#cbd5e1', stroke: '#64748b', strokeWidth: 2, top: 82, left: 0, rx: 2 });
+            objects.push(frontBar1, frontBar2);
+
+            const group = new fabric.Group(objects, { originX: 'center', originY: 'center' });
+            group.isRack = true;
+            group.numTubes = numTubes;
+            return group;
+        }
+
+        function addTubeRack(numTubes = 5) {
+            const group = createRackGroup(numTubes);
+            attachRackEvent(group);
+            centerAndAdd(group);
+        }
+
+        function attachRackEvent(group) {
+            group.on('mousedblclick', () => {
+                const inputHtml = `<label class="block text-xs font-bold mb-1">Nombre de tubes (1 à 20)</label>
+                                   <input type="number" id="rackInput" value="${group.numTubes}" min="1" max="20" class="w-full border border-slate-300 rounded p-2 focus:border-blue-500 outline-none">`;
+                openModal("Modifier le portoir", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
+                    const newVal = parseInt(document.getElementById('rackInput').value);
+                    if(newVal && newVal > 0 && newVal <= 20) {
+                        // Pour changer le nombre d'éléments proprement, on recrée le groupe complet aux mêmes coordonnées
+                        const left = group.left;
+                        const top = group.top;
+                        const scaleX = group.scaleX;
+                        const scaleY = group.scaleY;
+                        const angle = group.angle;
+                        
+                        canvas.remove(group);
+                        
+                        const newGroup = createRackGroup(newVal);
+                        newGroup.set({ left, top, scaleX, scaleY, angle });
+                        attachRackEvent(newGroup);
+                        
+                        canvas.add(newGroup);
+                        canvas.setActiveObject(newGroup);
+                        canvas.renderAll();
+                    }
+                });
+            });
+        }
+
+        function addTubeCap() {
+            // Bouchon en caoutchouc
+            const stopper = new fabric.Polygon([{x: 0, y: 0}, {x: 26, y: 0}, {x: 20, y: 24}, {x: 6, y: 24}], { fill: '#475569', stroke: '#1e293b', strokeWidth: 2, originX: 'center', originY: 'center' });
+            // Lignes de texture
+            const line1 = new fabric.Line([-8, -4, 8, -4], { stroke: '#334155', strokeWidth: 2, originX: 'center', originY: 'center' });
+            const line2 = new fabric.Line([-6, 4, 6, 4], { stroke: '#334155', strokeWidth: 2, originX: 'center', originY: 'center' });
+            
+            const group = new fabric.Group([stopper, line1, line2], { originX: 'center', originY: 'center' });
+            centerAndAdd(group);
+        }
+
         function addPetri(type) {
             const groupElements = [];
             const dishBase = new fabric.Circle({ radius: 42, fill: '#cbd5e1', originX: 'center', originY: 'center', top: 3, left: 3 });
@@ -808,7 +894,7 @@
 
         function exportJSON() {
             // Liste des propriétés personnalisées indispensables au fonctionnement des outils (couleurs, double-clics)
-            const customPropsToSave = ['hasLiquid', 'liquidPart', 'baseHexColor', 'liquidAlpha', 'hasColonies', 'isColony', 'isBadge', 'isIncubator', 'isBalance'];
+            const customPropsToSave = ['hasLiquid', 'liquidPart', 'baseHexColor', 'liquidAlpha', 'hasColonies', 'isColony', 'isBadge', 'isIncubator', 'isBalance', 'isRack', 'numTubes'];
             
             const jsonData = canvas.toJSON(customPropsToSave);
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonData));
@@ -836,6 +922,7 @@
                         if (obj.isBadge) attachBadgeEvent(obj);
                         if (obj.isIncubator) attachIncubatorEvent(obj);
                         if (obj.isBalance) attachBalanceEvent(obj);
+                        if (obj.isRack) attachRackEvent(obj);
                     });
                     
                     canvas.renderAll();
