@@ -154,6 +154,25 @@
                     <span class="text-xs font-medium text-center">Sac Stomacher</span>
                 </button>
 
+                <!-- NOUVEAU : Flacon de Gélose -->
+                <button onclick="addFlask()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31L8 12.5A2 2 0 0 0 8 14v6a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-6a2 2 0 0 0-.27-1L14 9.31V2"/><rect x="8" y="2" width="8" height="4" fill="currentColor" opacity="0.3"/><path d="M8 16h8" opacity="0.3"/></svg>
+                    <span class="text-xs font-medium text-center">Flacon (Gélose)</span>
+                </button>
+
+                <!-- NOUVELLE CATÉGORIE : Produits -->
+                <div class="col-span-2 text-xs font-bold text-slate-400 mt-4 mb-1">Produits & Échantillons</div>
+
+                <button onclick="addShrimp()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10 A 6 6 0 0 1 20 10 A 8 8 0 0 1 10 20" stroke-linecap="round"/><path d="M10 20 L 6 22 L 8 17"/><circle cx="16" cy="6" r="1" fill="currentColor"/></svg>
+                    <span class="text-xs font-medium text-center">Crevette</span>
+                </button>
+
+                <button onclick="addBlackPudding()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-red-900 hover:bg-red-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-red-900" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="8" rx="4"/><path d="M4 12 H 2 M20 12 H 22"/></svg>
+                    <span class="text-xs font-medium text-center">Boudin noir</span>
+                </button>
+
                 <div class="col-span-2 text-xs font-bold text-slate-400 mt-4 mb-1">Instruments & Appareils</div>
 
                 <button onclick="addMicropipette()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
@@ -199,6 +218,12 @@
                 <button onclick="addIncubator()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><rect x="8" y="6" width="8" height="4" rx="1"/><path d="M6 14h12M6 18h12"/></svg>
                     <span class="text-xs font-medium text-center">Étuve (Incubateur)</span>
+                </button>
+
+                <!-- NOUVEAU : Balance de précision -->
+                <button onclick="addBalance()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="18" height="8" rx="2"/><path d="M6 12V8h12v4"/><rect x="7" y="14" width="6" height="4" rx="1" fill="currentColor" opacity="0.4" stroke="none"/></svg>
+                    <span class="text-xs font-medium text-center">Balance</span>
                 </button>
 
                 <button onclick="addBunsenBurner()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition gap-2 group">
@@ -433,7 +458,11 @@
                 openModal("Modifier la puce", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
                     const newVal = document.getElementById('badgeInput').value;
                     if(newVal) {
-                        textObj.set('text', newVal);
+                        // FIX: On force le groupe à mettre à jour ses dimensions et son cache interne
+                        group.removeWithUpdate(textObj);
+                        textObj.set('text', String(newVal));
+                        group.addWithUpdate(textObj);
+                        group.set('dirty', true);
                         canvas.renderAll();
                     }
                 });
@@ -541,6 +570,52 @@
             centerAndAdd(group);
         }
 
+        // --- NOUVEAUX ÉLÉMENTS ---
+
+        // Flacon de Gélose
+        function addFlask() {
+            const neck = new fabric.Rect({ width: 20, height: 35, fill: 'rgba(248, 250, 252, 0.6)', stroke: '#64748b', strokeWidth: 2, top: -55, originX: 'center', originY: 'center' });
+            const cap = new fabric.Rect({ width: 26, height: 14, fill: '#3b82f6', stroke: '#1e3a8a', strokeWidth: 2, top: -70, rx: 3, originX: 'center', originY: 'center' });
+            const body = new fabric.Path('M -10 -37.5 L 10 -37.5 L 35 -5 L 35 60 A 8 8 0 0 1 27 68 L -27 68 A 8 8 0 0 1 -35 60 L -35 -5 Z', { fill: 'rgba(248, 250, 252, 0.6)', stroke: '#64748b', strokeWidth: 2, originX: 'center', originY: 'center' });
+            // Le liquide réagit au sélecteur de couleur
+            const liquid = new fabric.Path('M -32 20 L 32 20 L 32 58 A 5 5 0 0 1 27 63 L -27 63 A 5 5 0 0 1 -32 58 Z', { fill: 'rgba(253, 224, 71, 0.6)', stroke: 'transparent', originX: 'center', originY: 'center', liquidPart: true, baseHexColor: '#fde047', liquidAlpha: 0.6 });
+            
+            const group = new fabric.Group([neck, body, liquid, cap], { originX: 'center', originY: 'center' });
+            group.hasLiquid = true;
+            centerAndAdd(group);
+        }
+
+        // Échantillon : Crevette (dessinée via une superposition de formes pour un rendu organique)
+        function addShrimp() {
+            const p1 = new fabric.Circle({radius: 14, fill: '#fb923c', stroke: '#ea580c', strokeWidth: 2, left: 15, top: -20});
+            const p2 = new fabric.Circle({radius: 12, fill: '#fb923c', stroke: '#ea580c', strokeWidth: 2, left: 20, top: -5});
+            const p3 = new fabric.Circle({radius: 10, fill: '#fb923c', stroke: '#ea580c', strokeWidth: 2, left: 18, top: 10});
+            const p4 = new fabric.Circle({radius: 8, fill: '#fb923c', stroke: '#ea580c', strokeWidth: 2, left: 12, top: 22});
+            const p5 = new fabric.Circle({radius: 6, fill: '#fb923c', stroke: '#ea580c', strokeWidth: 2, left: 4, top: 30});
+            
+            const tail1 = new fabric.Path('M 4 30 L -8 42 L 12 38 Z', { fill: '#fb923c', stroke: '#ea580c', strokeWidth: 2 });
+            const tail2 = new fabric.Path('M 4 30 L -12 32 L 2 24 Z', { fill: '#fb923c', stroke: '#ea580c', strokeWidth: 2 });
+            const eye = new fabric.Circle({ radius: 2.5, fill: '#1e293b', left: 22, top: -22 });
+            const antenna = new fabric.Path('M 20 -20 Q 5 -35 25 -45', { fill: 'transparent', stroke: '#ea580c', strokeWidth: 1.5 });
+
+            const group = new fabric.Group([tail1, tail2, p5, p4, p3, p2, p1, eye, antenna], { originX: 'center', originY: 'center' });
+            centerAndAdd(group);
+        }
+
+        // Échantillon : Boudin Noir
+        function addBlackPudding() {
+            const body = new fabric.Rect({ width: 80, height: 26, fill: '#450a0a', stroke: '#2a0404', strokeWidth: 2, rx: 13, ry: 13, originX: 'center', originY: 'center' });
+            const knot1 = new fabric.Path('M -40 0 L -50 -8 L -50 8 Z', { fill: '#450a0a', stroke: '#2a0404', strokeWidth: 1, originX: 'center', originY: 'center' });
+            const knot2 = new fabric.Path('M 40 0 L 50 -8 L 50 8 Z', { fill: '#450a0a', stroke: '#2a0404', strokeWidth: 1, originX: 'center', originY: 'center' });
+            // Reflet pour donner un effet de "boyau" brillant
+            const highlight = new fabric.Path('M -25 -6 Q 0 -8 25 -6', { fill: 'transparent', stroke: 'rgba(255,255,255,0.15)', strokeWidth: 3, strokeLineCap: 'round', originX: 'center', originY: 'center' });
+
+            const group = new fabric.Group([knot1, knot2, body, highlight], { originX: 'center', originY: 'center' });
+            centerAndAdd(group);
+        }
+
+        // --- FIN NOUVEAUX ÉLÉMENTS ---
+
         function addEppendorf() {
             const body = new fabric.Path('M -10 -20 L 10 -20 L 10 5 L 2 25 A 2 2 0 0 1 -2 25 L -10 5 Z', { fill: 'rgba(241, 245, 249, 0.8)', stroke: '#475569', strokeWidth: 2, originX: 'center', originY: 'center' });
             const cap = new fabric.Path('M -10 -20 L -25 -25 L -25 -28 L -10 -23 Z', { fill: '#cbd5e1', stroke: '#475569', strokeWidth: 2, originX: 'center', originY: 'center' });
@@ -629,6 +704,46 @@
             centerAndAdd(group);
         }
 
+        // --- NOUVEAU : Balance de précision ---
+        function addBalance() {
+            const base = new fabric.Rect({ width: 140, height: 40, fill: '#cbd5e1', stroke: '#64748b', strokeWidth: 2, rx: 6, originX: 'center', originY: 'center', top: 10 });
+            const panBase = new fabric.Rect({ width: 60, height: 10, fill: '#94a3b8', stroke: '#64748b', strokeWidth: 2, top: -15, originX: 'center', originY: 'center' });
+            const pan = new fabric.Rect({ width: 100, height: 6, fill: '#f1f5f9', stroke: '#64748b', strokeWidth: 2, top: -20, rx: 2, originX: 'center', originY: 'center' });
+            const screen = new fabric.Rect({ width: 70, height: 22, fill: '#0f172a', top: 10, left: -20, rx: 2, originX: 'center', originY: 'center' });
+            
+            // Texte affichant la valeur de base de 25.0 g
+            const weightText = new fabric.Text('25.0 g', { fontSize: 14, fill: '#10b981', top: 11, left: -20, fontFamily: 'monospace', fontWeight: 'bold', originX: 'center', originY: 'center' });
+            
+            const btnT = new fabric.Circle({ radius: 5, fill: '#3b82f6', top: 10, left: 30, originX: 'center', originY: 'center' });
+            const btnO = new fabric.Circle({ radius: 5, fill: '#ef4444', top: 10, left: 45, originX: 'center', originY: 'center' });
+
+            const group = new fabric.Group([base, panBase, pan, screen, weightText, btnT, btnO], { originX: 'center', originY: 'center' });
+            group.isBalance = true; // Tag pour l'import JSON
+            
+            attachBalanceEvent(group);
+            centerAndAdd(group);
+        }
+
+        // Événement modifiant la valeur de la balance au double-clic
+        function attachBalanceEvent(group) {
+            group.on('mousedblclick', () => {
+                const textObj = group.getObjects().find(o => o.type === 'text' && o.fill === '#10b981');
+                if(!textObj) return;
+                const inputHtml = `<label class="block text-xs font-bold mb-1">Masse affichée (ex: 25.0 g)</label>
+                                   <input type="text" id="balanceInput" value="${textObj.text}" class="w-full border border-slate-300 rounded p-2 focus:border-blue-500 outline-none">`;
+                openModal("Réglage de la balance", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
+                    const newVal = document.getElementById('balanceInput').value;
+                    if(newVal) {
+                        group.removeWithUpdate(textObj);
+                        textObj.set('text', newVal);
+                        group.addWithUpdate(textObj);
+                        group.set('dirty', true);
+                        canvas.renderAll();
+                    }
+                });
+            });
+        }
+
         // Séparation de l'événement pour l'Étuve
         function attachIncubatorEvent(group) {
             group.on('mousedblclick', () => {
@@ -638,7 +753,14 @@
                                    <input type="number" id="tempInput" step="0.5" value="${tempText.text}" class="w-full border border-slate-300 rounded p-2 focus:border-blue-500 outline-none">`;
                 openModal("Réglage de l'Étuve", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
                     const newVal = document.getElementById('tempInput').value;
-                    if(newVal) { tempText.set('text', newVal); canvas.renderAll(); }
+                    if(newVal) { 
+                        // FIX: On force le groupe à mettre à jour ses dimensions et son cache interne
+                        group.removeWithUpdate(tempText);
+                        tempText.set('text', String(newVal)); 
+                        group.addWithUpdate(tempText);
+                        group.set('dirty', true);
+                        canvas.renderAll(); 
+                    }
                 });
             });
         }
@@ -686,7 +808,7 @@
 
         function exportJSON() {
             // Liste des propriétés personnalisées indispensables au fonctionnement des outils (couleurs, double-clics)
-            const customPropsToSave = ['hasLiquid', 'liquidPart', 'baseHexColor', 'liquidAlpha', 'hasColonies', 'isColony', 'isBadge', 'isIncubator'];
+            const customPropsToSave = ['hasLiquid', 'liquidPart', 'baseHexColor', 'liquidAlpha', 'hasColonies', 'isColony', 'isBadge', 'isIncubator', 'isBalance'];
             
             const jsonData = canvas.toJSON(customPropsToSave);
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonData));
@@ -713,6 +835,7 @@
                     canvas.getObjects().forEach(obj => {
                         if (obj.isBadge) attachBadgeEvent(obj);
                         if (obj.isIncubator) attachIncubatorEvent(obj);
+                        if (obj.isBalance) attachBalanceEvent(obj);
                     });
                     
                     canvas.renderAll();
