@@ -85,6 +85,17 @@
 
             <div class="w-px h-6 bg-slate-200 mx-1"></div>
 
+            <!-- NOUVEAU : Contrôles d'Import / Export JSON -->
+            <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importJSON(event)">
+            <button onclick="triggerImport()" class="flex items-center gap-1 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition" title="Ouvrir un projet (JSON)">
+                <i data-lucide="folder-open" class="w-4 h-4"></i> <span class="hidden xl:inline">Ouvrir</span>
+            </button>
+            <button onclick="exportJSON()" class="flex items-center gap-1 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition" title="Sauvegarder le projet (JSON)">
+                <i data-lucide="save" class="w-4 h-4"></i> <span class="hidden xl:inline">Sauvegarder</span>
+            </button>
+
+            <div class="w-px h-6 bg-slate-200 mx-1"></div>
+
             <button onclick="exportPNG()" class="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md shadow-sm transition">
                 <i data-lucide="image-down" class="w-4 h-4"></i> Exporter PNG
             </button>
@@ -406,20 +417,27 @@
             const text = new fabric.Text('1', { fontSize: 16, fill: '#ffffff', fontWeight: 'bold', fontFamily: 'sans-serif', originX: 'center', originY: 'center' });
             
             const group = new fabric.Group([circle, text], { originX: 'center', originY: 'center' });
+            group.isBadge = true; // Tag pour identifier l'objet après un import JSON
             
-            // Modifier le texte/numéro au double clic
+            attachBadgeEvent(group);
+            centerAndAdd(group);
+        }
+
+        // Séparation de l'événement pour pouvoir le réattacher après un import JSON
+        function attachBadgeEvent(group) {
             group.on('mousedblclick', () => {
+                const textObj = group.getObjects().find(o => o.type === 'text' || o.type === 'i-text');
+                if(!textObj) return;
                 const inputHtml = `<label class="block text-xs font-bold mb-1">Numéro / Lettre de l'étape</label>
-                                   <input type="text" id="badgeInput" value="${text.text}" class="w-full border border-slate-300 rounded p-2 focus:border-blue-500 outline-none">`;
+                                   <input type="text" id="badgeInput" value="${textObj.text}" class="w-full border border-slate-300 rounded p-2 focus:border-blue-500 outline-none">`;
                 openModal("Modifier la puce", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
                     const newVal = document.getElementById('badgeInput').value;
                     if(newVal) {
-                        text.set('text', newVal);
+                        textObj.set('text', newVal);
                         canvas.renderAll();
                     }
                 });
             });
-            centerAndAdd(group);
         }
 
         function addText() { centerAndAdd(new fabric.IText('Texte modifiable', { fontFamily: 'sans-serif', fontSize: 24, fill: '#1e293b', fontWeight: 'bold' })); }
@@ -605,7 +623,17 @@
             const tempText = new fabric.Text('37.0', { fontSize: 22, fill: '#ef4444', top: -65, fontFamily: 'monospace', fontWeight: 'bold', originX: 'center', originY: 'center' });
             const group = new fabric.Group([box, innerGlass, screenBg, tempText], { originX: 'center', originY: 'center' });
             
+            group.isIncubator = true; // Tag pour identifier l'objet après un import JSON
+            
+            attachIncubatorEvent(group);
+            centerAndAdd(group);
+        }
+
+        // Séparation de l'événement pour l'Étuve
+        function attachIncubatorEvent(group) {
             group.on('mousedblclick', () => {
+                const tempText = group.getObjects().find(o => o.type === 'text' && o.fill === '#ef4444');
+                if(!tempText) return;
                 const inputHtml = `<label class="block text-xs font-bold mb-1">Température (°C)</label>
                                    <input type="number" id="tempInput" step="0.5" value="${tempText.text}" class="w-full border border-slate-300 rounded p-2 focus:border-blue-500 outline-none">`;
                 openModal("Réglage de l'Étuve", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
@@ -613,7 +641,6 @@
                     if(newVal) { tempText.set('text', newVal); canvas.renderAll(); }
                 });
             });
-            centerAndAdd(group);
         }
 
         function addBunsenBurner() {
@@ -653,6 +680,49 @@
             
             // Nettoyage de la mémoire
             setTimeout(() => URL.revokeObjectURL(url), 100);
+        }
+
+        // --- NOUVEAU : Fonctions d'Import / Export JSON ---
+
+        function exportJSON() {
+            // Liste des propriétés personnalisées indispensables au fonctionnement des outils (couleurs, double-clics)
+            const customPropsToSave = ['hasLiquid', 'liquidPart', 'baseHexColor', 'liquidAlpha', 'hasColonies', 'isColony', 'isBadge', 'isIncubator'];
+            
+            const jsonData = canvas.toJSON(customPropsToSave);
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonData));
+            
+            const link = document.createElement('a');
+            link.download = "projet_microbiodraw.json";
+            link.href = dataStr;
+            link.click();
+        }
+
+        function triggerImport() {
+            document.getElementById('importJsonInput').click();
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const jsonData = e.target.result;
+                canvas.loadFromJSON(jsonData, function() {
+                    // Une fois le canevas chargé, on ré-attache les événements interactifs (qui ne sont pas dans le JSON)
+                    canvas.getObjects().forEach(obj => {
+                        if (obj.isBadge) attachBadgeEvent(obj);
+                        if (obj.isIncubator) attachIncubatorEvent(obj);
+                    });
+                    
+                    canvas.renderAll();
+                    updateColorPickers(); // Met à jour l'UI
+                    
+                    // On vide le champ file pour permettre de recharger le même fichier plus tard si besoin
+                    document.getElementById('importJsonInput').value = "";
+                });
+            };
+            reader.readAsText(file);
         }
 
     </script>
