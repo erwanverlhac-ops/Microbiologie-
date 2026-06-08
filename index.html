@@ -124,7 +124,7 @@
                     <span class="text-xs font-medium text-center">Tube à essai</span>
                 </button>
 
-                <!-- NOUVEAU : Portoir de tubes et Bouchon -->
+                <!-- Portoir de tubes et Bouchon -->
                 <button onclick="addTubeRack()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z" fill="currentColor" opacity="0.2"/><path d="M4 14h16v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6z"/><path d="M4 10h16"/><path d="M6 4v10 M12 4v10 M18 4v10"/><path d="M5 4h2 M11 4h2 M17 4h2"/></svg>
                     <span class="text-xs font-medium text-center">Portoir (Tubes)</span>
@@ -165,13 +165,13 @@
                     <span class="text-xs font-medium text-center">Sac Stomacher</span>
                 </button>
 
-                <!-- NOUVEAU : Flacon de Gélose -->
+                <!-- Flacon de Gélose -->
                 <button onclick="addFlask()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31L8 12.5A2 2 0 0 0 8 14v6a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-6a2 2 0 0 0-.27-1L14 9.31V2"/><rect x="8" y="2" width="8" height="4" fill="currentColor" opacity="0.3"/><path d="M8 16h8" opacity="0.3"/></svg>
                     <span class="text-xs font-medium text-center">Flacon (Gélose)</span>
                 </button>
 
-                <!-- NOUVELLE CATÉGORIE : Produits -->
+                <!-- Produits -->
                 <div class="col-span-2 text-xs font-bold text-slate-400 mt-4 mb-1">Produits & Échantillons</div>
 
                 <button onclick="addShrimp()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition gap-2 group">
@@ -231,7 +231,7 @@
                     <span class="text-xs font-medium text-center">Étuve (Incubateur)</span>
                 </button>
 
-                <!-- NOUVEAU : Balance de précision -->
+                <!-- Balance de précision -->
                 <button onclick="addBalance()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="18" height="8" rx="2"/><path d="M6 12V8h12v4"/><rect x="7" y="14" width="6" height="4" rx="1" fill="currentColor" opacity="0.4" stroke="none"/></svg>
                     <span class="text-xs font-medium text-center">Balance</span>
@@ -244,7 +244,7 @@
 
                 <div class="col-span-2 text-xs font-bold text-slate-400 mt-4 mb-1">Annotations & Badges</div>
 
-                <!-- NOUVEAU : Puce numérotée (Badge) -->
+                <!-- Puce numérotée (Badge) -->
                 <button onclick="addBadge()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-emerald-400 hover:bg-emerald-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-emerald-600" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" fill="white" font-weight="bold" font-family="sans-serif" font-size="12">1</text></svg>
                     <span class="text-xs font-medium text-center">Puce numérotée</span>
@@ -292,6 +292,9 @@
     <script>
         lucide.createIcons();
 
+        // Propriétés à conserver lors de la copie/historique/export
+        const customPropsToSave = ['hasLiquid', 'liquidPart', 'baseHexColor', 'liquidAlpha', 'hasColonies', 'isColony', 'isBadge', 'isIncubator', 'isBalance', 'isRack', 'numTubes'];
+
         // Initialisation de Fabric.js avec une grande taille fixe
         const canvas = new fabric.Canvas('c', {
             preserveObjectStacking: true,
@@ -308,12 +311,107 @@
             padding: 5
         });
 
-        // Supprimer via clavier
+        // --- GESTION DE L'HISTORIQUE (Ctrl+Z) ---
+        let canvasHistory = [];
+        let historyProcessing = false;
+
+        function saveHistory() {
+            if (historyProcessing) return;
+            canvasHistory.push(JSON.stringify(canvas.toJSON(customPropsToSave)));
+            if (canvasHistory.length > 30) canvasHistory.shift(); // Garde les 30 dernières actions
+        }
+
+        canvas.on('object:added', saveHistory);
+        canvas.on('object:modified', saveHistory);
+        canvas.on('object:removed', saveHistory);
+        setTimeout(saveHistory, 100); // État initial
+
+        function undo() {
+            if (canvasHistory.length > 1) {
+                historyProcessing = true;
+                canvasHistory.pop(); // Enlève l'état actuel
+                const prevState = canvasHistory[canvasHistory.length - 1];
+                canvas.loadFromJSON(prevState, function() {
+                    canvas.getObjects().forEach(obj => {
+                        if (obj.isBadge) attachBadgeEvent(obj);
+                        if (obj.isIncubator) attachIncubatorEvent(obj);
+                        if (obj.isBalance) attachBalanceEvent(obj);
+                        if (obj.isRack) attachRackEvent(obj);
+                    });
+                    canvas.renderAll();
+                    updateColorPickers();
+                    historyProcessing = false;
+                });
+            }
+        }
+
+        // --- GESTION DU PRESSE-PAPIERS (Ctrl+C / Ctrl+V) ---
+        let _clipboard = null;
+
+        function copy() {
+            const activeObj = canvas.getActiveObject();
+            if (activeObj) {
+                activeObj.clone(function(cloned) {
+                    _clipboard = cloned;
+                }, customPropsToSave);
+            }
+        }
+
+        function paste() {
+            if (!_clipboard) return;
+            _clipboard.clone(function(clonedObj) {
+                canvas.discardActiveObject();
+                clonedObj.set({
+                    left: clonedObj.left + 20,
+                    top: clonedObj.top + 20,
+                    evented: true,
+                });
+                if (clonedObj.type === 'activeSelection') {
+                    clonedObj.canvas = canvas;
+                    clonedObj.forEachObject(function(obj) {
+                        canvas.add(obj);
+                    });
+                    clonedObj.setCoords();
+                } else {
+                    canvas.add(clonedObj);
+                }
+                
+                // Décale le presse-papiers pour le prochain collage
+                _clipboard.top += 20;
+                _clipboard.left += 20;
+
+                // Ré-attache les événements interactifs si nécessaire
+                let objsToProcess = clonedObj.type === 'activeSelection' ? clonedObj.getObjects() : [clonedObj];
+                objsToProcess.forEach(obj => {
+                    if (obj.isBadge) attachBadgeEvent(obj);
+                    if (obj.isIncubator) attachIncubatorEvent(obj);
+                    if (obj.isBalance) attachBalanceEvent(obj);
+                    if (obj.isRack) attachRackEvent(obj);
+                });
+
+                canvas.setActiveObject(clonedObj);
+                canvas.requestRenderAll();
+            }, customPropsToSave);
+        }
+
+        // Écouteurs globaux du clavier
         window.addEventListener('keydown', function(e) {
+            // Empêche le déclenchement lors de la frappe dans un input ou une modale
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            const activeObj = canvas.getActiveObject();
+            if (activeObj && activeObj.isEditing) return; 
+
+            // Suppression via clavier
             if (e.key === 'Delete' || e.key === 'Backspace') {
-                const activeObj = canvas.getActiveObject();
-                if (activeObj && activeObj.isEditing) return; 
                 deleteSelected();
+            }
+
+            // Raccourcis (Ctrl ou Cmd sur Mac)
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'c' || e.key === 'C') { e.preventDefault(); copy(); }
+                if (e.key === 'v' || e.key === 'V') { e.preventDefault(); paste(); }
+                if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); undo(); }
             }
         });
 
@@ -447,7 +545,7 @@
 
 
         
-        // NOUVEAU : Puce numérotée (Badge)
+        // Puce numérotée (Badge)
         function addBadge() {
             const circle = new fabric.Circle({ radius: 14, fill: '#ef4444', originX: 'center', originY: 'center' });
             const text = new fabric.Text('1', { fontSize: 16, fill: '#ffffff', fontWeight: 'bold', fontFamily: 'sans-serif', originX: 'center', originY: 'center' });
@@ -469,7 +567,6 @@
                 openModal("Modifier la puce", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
                     const newVal = document.getElementById('badgeInput').value;
                     if(newVal) {
-                        // FIX: On force le groupe à mettre à jour ses dimensions et son cache interne
                         group.removeWithUpdate(textObj);
                         textObj.set('text', String(newVal));
                         group.addWithUpdate(textObj);
@@ -518,7 +615,7 @@
             centerAndAdd(group);
         }
 
-        // --- NOUVEAU : Portoir et Bouchon ---
+        // --- Portoir et Bouchon ---
         function createRackGroup(numTubes) {
             const objects = [];
             const spacing = 40;
@@ -582,14 +679,14 @@
             });
         }
 
+        // DESIGN REVU : Nouveau bouchon propre
         function addTubeCap() {
-            // Bouchon en caoutchouc
-            const stopper = new fabric.Polygon([{x: 0, y: 0}, {x: 26, y: 0}, {x: 20, y: 24}, {x: 6, y: 24}], { fill: '#475569', stroke: '#1e293b', strokeWidth: 2, originX: 'center', originY: 'center' });
-            // Lignes de texture
-            const line1 = new fabric.Line([-8, -4, 8, -4], { stroke: '#334155', strokeWidth: 2, originX: 'center', originY: 'center' });
-            const line2 = new fabric.Line([-6, 4, 6, 4], { stroke: '#334155', strokeWidth: 2, originX: 'center', originY: 'center' });
-            
-            const group = new fabric.Group([stopper, line1, line2], { originX: 'center', originY: 'center' });
+            // Haut du bouchon (collerette qui dépasse du tube)
+            const capTop = new fabric.Rect({ width: 26, height: 8, fill: '#334155', stroke: '#1e293b', strokeWidth: 2, rx: 2, originX: 'center', originY: 'center', top: -10 });
+            // Bas du bouchon (partie insérée dans le tube, légèrement biseautée)
+            const capBottom = new fabric.Polygon([{x: -9, y: -6}, {x: 9, y: -6}, {x: 7, y: 14}, {x: -7, y: 14}], { fill: '#475569', stroke: '#1e293b', strokeWidth: 2, originX: 'center', originY: 'center', top: 4 });
+
+            const group = new fabric.Group([capTop, capBottom], { originX: 'center', originY: 'center' });
             centerAndAdd(group);
         }
 
@@ -656,8 +753,6 @@
             centerAndAdd(group);
         }
 
-        // --- NOUVEAUX ÉLÉMENTS ---
-
         // Flacon de Gélose
         function addFlask() {
             const neck = new fabric.Rect({ width: 20, height: 35, fill: 'rgba(248, 250, 252, 0.6)', stroke: '#64748b', strokeWidth: 2, top: -55, originX: 'center', originY: 'center' });
@@ -671,7 +766,7 @@
             centerAndAdd(group);
         }
 
-        // Échantillon : Crevette (dessinée via une superposition de formes pour un rendu organique)
+        // Échantillon : Crevette
         function addShrimp() {
             const p1 = new fabric.Circle({radius: 14, fill: '#fb923c', stroke: '#ea580c', strokeWidth: 2, left: 15, top: -20});
             const p2 = new fabric.Circle({radius: 12, fill: '#fb923c', stroke: '#ea580c', strokeWidth: 2, left: 20, top: -5});
@@ -699,8 +794,6 @@
             const group = new fabric.Group([knot1, knot2, body, highlight], { originX: 'center', originY: 'center' });
             centerAndAdd(group);
         }
-
-        // --- FIN NOUVEAUX ÉLÉMENTS ---
 
         function addEppendorf() {
             const body = new fabric.Path('M -10 -20 L 10 -20 L 10 5 L 2 25 A 2 2 0 0 1 -2 25 L -10 5 Z', { fill: 'rgba(241, 245, 249, 0.8)', stroke: '#475569', strokeWidth: 2, originX: 'center', originY: 'center' });
@@ -784,33 +877,31 @@
             const tempText = new fabric.Text('37.0', { fontSize: 22, fill: '#ef4444', top: -65, fontFamily: 'monospace', fontWeight: 'bold', originX: 'center', originY: 'center' });
             const group = new fabric.Group([box, innerGlass, screenBg, tempText], { originX: 'center', originY: 'center' });
             
-            group.isIncubator = true; // Tag pour identifier l'objet après un import JSON
+            group.isIncubator = true; 
             
             attachIncubatorEvent(group);
             centerAndAdd(group);
         }
 
-        // --- NOUVEAU : Balance de précision ---
+        // Balance de précision
         function addBalance() {
             const base = new fabric.Rect({ width: 140, height: 40, fill: '#cbd5e1', stroke: '#64748b', strokeWidth: 2, rx: 6, originX: 'center', originY: 'center', top: 10 });
             const panBase = new fabric.Rect({ width: 60, height: 10, fill: '#94a3b8', stroke: '#64748b', strokeWidth: 2, top: -15, originX: 'center', originY: 'center' });
             const pan = new fabric.Rect({ width: 100, height: 6, fill: '#f1f5f9', stroke: '#64748b', strokeWidth: 2, top: -20, rx: 2, originX: 'center', originY: 'center' });
             const screen = new fabric.Rect({ width: 70, height: 22, fill: '#0f172a', top: 10, left: -20, rx: 2, originX: 'center', originY: 'center' });
             
-            // Texte affichant la valeur de base de 25.0 g
             const weightText = new fabric.Text('25.0 g', { fontSize: 14, fill: '#10b981', top: 11, left: -20, fontFamily: 'monospace', fontWeight: 'bold', originX: 'center', originY: 'center' });
             
             const btnT = new fabric.Circle({ radius: 5, fill: '#3b82f6', top: 10, left: 30, originX: 'center', originY: 'center' });
             const btnO = new fabric.Circle({ radius: 5, fill: '#ef4444', top: 10, left: 45, originX: 'center', originY: 'center' });
 
             const group = new fabric.Group([base, panBase, pan, screen, weightText, btnT, btnO], { originX: 'center', originY: 'center' });
-            group.isBalance = true; // Tag pour l'import JSON
+            group.isBalance = true; 
             
             attachBalanceEvent(group);
             centerAndAdd(group);
         }
 
-        // Événement modifiant la valeur de la balance au double-clic
         function attachBalanceEvent(group) {
             group.on('mousedblclick', () => {
                 const textObj = group.getObjects().find(o => o.type === 'text' && o.fill === '#10b981');
@@ -830,7 +921,6 @@
             });
         }
 
-        // Séparation de l'événement pour l'Étuve
         function attachIncubatorEvent(group) {
             group.on('mousedblclick', () => {
                 const tempText = group.getObjects().find(o => o.type === 'text' && o.fill === '#ef4444');
@@ -840,7 +930,6 @@
                 openModal("Réglage de l'Étuve", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
                     const newVal = document.getElementById('tempInput').value;
                     if(newVal) { 
-                        // FIX: On force le groupe à mettre à jour ses dimensions et son cache interne
                         group.removeWithUpdate(tempText);
                         tempText.set('text', String(newVal)); 
                         group.addWithUpdate(tempText);
@@ -867,38 +956,21 @@
         }
 
         function exportSVG() {
-            // Désélectionne l'objet actif pour ne pas voir la bordure bleue de sélection sur l'export
             canvas.discardActiveObject();
             canvas.renderAll();
-            
-            // Fabric.js génère le code SVG de tout le canevas
-            const svgData = canvas.toSVG({
-                width: canvas.width,
-                height: canvas.height
-            });
-            
-            // Création d'un fichier virtuel (Blob) pour déclencher le téléchargement
+            const svgData = canvas.toSVG({ width: canvas.width, height: canvas.height });
             const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
             const url = URL.createObjectURL(blob);
-            
             const link = document.createElement('a');
             link.download = 'protocole_microbio.svg';
             link.href = url;
             link.click();
-            
-            // Nettoyage de la mémoire
             setTimeout(() => URL.revokeObjectURL(url), 100);
         }
 
-        // --- NOUVEAU : Fonctions d'Import / Export JSON ---
-
         function exportJSON() {
-            // Liste des propriétés personnalisées indispensables au fonctionnement des outils (couleurs, double-clics)
-            const customPropsToSave = ['hasLiquid', 'liquidPart', 'baseHexColor', 'liquidAlpha', 'hasColonies', 'isColony', 'isBadge', 'isIncubator', 'isBalance', 'isRack', 'numTubes'];
-            
             const jsonData = canvas.toJSON(customPropsToSave);
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jsonData));
-            
             const link = document.createElement('a');
             link.download = "projet_microbiodraw.json";
             link.href = dataStr;
@@ -916,8 +988,8 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const jsonData = e.target.result;
+                historyProcessing = true; // Empêche l'historique d'enregistrer l'import étape par étape
                 canvas.loadFromJSON(jsonData, function() {
-                    // Une fois le canevas chargé, on ré-attache les événements interactifs (qui ne sont pas dans le JSON)
                     canvas.getObjects().forEach(obj => {
                         if (obj.isBadge) attachBadgeEvent(obj);
                         if (obj.isIncubator) attachIncubatorEvent(obj);
@@ -926,10 +998,12 @@
                     });
                     
                     canvas.renderAll();
-                    updateColorPickers(); // Met à jour l'UI
-                    
-                    // On vide le champ file pour permettre de recharger le même fichier plus tard si besoin
+                    updateColorPickers();
                     document.getElementById('importJsonInput').value = "";
+                    
+                    // Reset de l'historique sur le nouveau fichier
+                    canvasHistory = [JSON.stringify(canvas.toJSON(customPropsToSave))];
+                    historyProcessing = false;
                 });
             };
             reader.readAsText(file);
