@@ -71,13 +71,13 @@
                 <button onclick="moveToBack()" class="flex items-center justify-center w-7 h-7 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded transition shadow-sm" title="Mettre en arrière-plan"><i data-lucide="arrow-down-to-line" class="w-4 h-4"></i></button>
             </div>
 
-            <!-- NOUVEAU : Color Picker pour liquides ET poudres -->
+            <!-- Color Picker pour liquides ET poudres -->
             <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-md border border-slate-200 pl-2">
                 <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Liquide / Poudre</span>
                 <input type="color" id="liquidColorPicker" class="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent opacity-50" title="Changer la couleur du liquide ou de la poudre (sélectionnez un objet)" disabled value="#cccccc">
             </div>
 
-            <!-- NOUVEAU : Color Picker pour Colonies -->
+            <!-- Color Picker pour Colonies -->
             <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-md border border-slate-200 pl-2">
                 <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Colonies</span>
                 <input type="color" id="coloniesColorPicker" class="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent opacity-50" title="Changer la couleur des colonies (sélectionnez une boîte)" disabled value="#cccccc">
@@ -85,7 +85,7 @@
 
             <div class="w-px h-6 bg-slate-200 mx-1"></div>
 
-            <!-- NOUVEAU : Contrôles d'Import / Export JSON -->
+            <!-- Contrôles d'Import / Export JSON -->
             <input type="file" id="importJsonInput" accept=".json" class="hidden" onchange="importJSON(event)">
             <button onclick="triggerImport()" class="flex items-center gap-1 px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-md transition" title="Ouvrir un projet (JSON)">
                 <i data-lucide="folder-open" class="w-4 h-4"></i> <span class="hidden xl:inline">Ouvrir</span>
@@ -165,16 +165,13 @@
                     <span class="text-xs font-medium text-center">Sac Stomacher</span>
                 </button>
 
-                <!-- Flacon de Gélose -->
                 <button onclick="addFlask()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31L8 12.5A2 2 0 0 0 8 14v6a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-6a2 2 0 0 0-.27-1L14 9.31V2"/><rect x="8" y="2" width="8" height="4" fill="currentColor" opacity="0.3"/><path d="M8 16h8" opacity="0.3"/></svg>
                     <span class="text-xs font-medium text-center">Flacon (Gélose)</span>
                 </button>
 
-                <!-- Produits -->
                 <div class="col-span-2 text-xs font-bold text-slate-400 mt-4 mb-1">Produits & Échantillons</div>
 
-                <!-- NOUVEAU : Boîte et Tas de poudre -->
                 <button onclick="addPowderBox()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-amber-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="8" width="12" height="14" rx="2"/><path d="M4 4h16v4H4z"/><path d="M9 14h6" opacity="0.3"/></svg>
                     <span class="text-xs font-medium text-center">Boîte (Poudre)</span>
@@ -217,6 +214,16 @@
                     <span class="text-xs font-medium text-center">Propipette</span>
                 </button>
 
+                <!-- NOUVEAU : Spatule -->
+                <button onclick="addSpatula()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M 16 8 L 8 16" />
+                        <path d="M 16 8 L 19 5 C 20 4, 21 5, 20 6 L 17 9 Z" fill="currentColor" opacity="0.3" />
+                        <path d="M 8 16 L 5 19 C 4 20, 3 19, 4 18 L 7 15 Z" fill="currentColor" opacity="0.3" />
+                    </svg>
+                    <span class="text-xs font-medium text-center">Spatule</span>
+                </button>
+
                 <button onclick="addSpreader()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22 V8 M8 8 L16 8 M16 8 V5"/></svg>
                     <span class="text-xs font-medium text-center">Râteau (Étaloir)</span>
@@ -242,13 +249,23 @@
                     <span class="text-xs font-medium text-center">Étuve (Incubateur)</span>
                 </button>
 
-                <!-- NOUVEAU : Entonnoir -->
+                <!-- NOUVEAU : Autoclave -->
+                <button onclick="addAutoclave()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="4" y="8" width="16" height="14" rx="2" />
+                        <path d="M 4 12 L 20 12" />
+                        <path d="M 12 8 L 12 4" />
+                        <path d="M 9 4 L 15 4" />
+                        <circle cx="12" cy="17" r="3" />
+                    </svg>
+                    <span class="text-xs font-medium text-center">Autoclave</span>
+                </button>
+
                 <button onclick="addFunnel()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16l-6 10v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-6L4 4z"/></svg>
                     <span class="text-xs font-medium text-center">Entonnoir</span>
                 </button>
 
-                <!-- Balance de précision -->
                 <button onclick="addBalance()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="12" width="18" height="8" rx="2"/><path d="M6 12V8h12v4"/><rect x="7" y="14" width="6" height="4" rx="1" fill="currentColor" opacity="0.4" stroke="none"/></svg>
                     <span class="text-xs font-medium text-center">Balance</span>
@@ -261,7 +278,6 @@
 
                 <div class="col-span-2 text-xs font-bold text-slate-400 mt-4 mb-1">Annotations & Badges</div>
 
-                <!-- Puce numérotée (Badge) -->
                 <button onclick="addBadge()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-emerald-400 hover:bg-emerald-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-emerald-600" fill="currentColor"><circle cx="12" cy="12" r="10"/><text x="12" y="16" text-anchor="middle" fill="white" font-weight="bold" font-family="sans-serif" font-size="12">1</text></svg>
                     <span class="text-xs font-medium text-center">Puce numérotée</span>
@@ -310,7 +326,7 @@
         lucide.createIcons();
 
         // Propriétés à conserver lors de la copie/historique/export
-        const customPropsToSave = ['hasLiquid', 'liquidPart', 'baseHexColor', 'liquidAlpha', 'hasColonies', 'isColony', 'isBadge', 'isIncubator', 'isBalance', 'isRack', 'numTubes'];
+        const customPropsToSave = ['hasLiquid', 'liquidPart', 'baseHexColor', 'liquidAlpha', 'hasColonies', 'isColony', 'isBadge', 'isIncubator', 'isBalance', 'isRack', 'numTubes', 'isAutoclave'];
 
         // Initialisation de Fabric.js avec une grande taille fixe
         const canvas = new fabric.Canvas('c', {
@@ -354,6 +370,7 @@
                         if (obj.isIncubator) attachIncubatorEvent(obj);
                         if (obj.isBalance) attachBalanceEvent(obj);
                         if (obj.isRack) attachRackEvent(obj);
+                        if (obj.isAutoclave) attachAutoclaveEvent(obj);
                     });
                     canvas.renderAll();
                     updateColorPickers();
@@ -404,6 +421,7 @@
                     if (obj.isIncubator) attachIncubatorEvent(obj);
                     if (obj.isBalance) attachBalanceEvent(obj);
                     if (obj.isRack) attachRackEvent(obj);
+                    if (obj.isAutoclave) attachAutoclaveEvent(obj);
                 });
 
                 canvas.setActiveObject(clonedObj);
@@ -696,7 +714,6 @@
             });
         }
 
-        // DESIGN REVU : Nouveau bouchon propre
         function addTubeCap() {
             // Haut du bouchon (collerette qui dépasse du tube)
             const capTop = new fabric.Rect({ width: 26, height: 8, fill: '#334155', stroke: '#1e293b', strokeWidth: 2, rx: 2, originX: 'center', originY: 'center', top: -10 });
@@ -783,8 +800,7 @@
             centerAndAdd(group);
         }
 
-        // --- NOUVEAU : Milieux déshydratés et Entonnoir ---
-
+        // Milieux déshydratés et Entonnoir
         function addPowderBox() {
             const body = new fabric.Rect({ width: 60, height: 80, fill: '#f8fafc', stroke: '#64748b', strokeWidth: 2, rx: 4, originX: 'center', originY: 'center' });
             const cap = new fabric.Rect({ width: 66, height: 18, fill: '#1e293b', stroke: '#0f172a', strokeWidth: 2, top: -45, rx: 2, originX: 'center', originY: 'center' });
@@ -910,6 +926,19 @@
             centerAndAdd(new fabric.Group([bulbShadow, bulb, bottomValv, sideValv], { originX: 'center', originY: 'center' }));
         }
 
+        // --- NOUVEAU : Spatule ---
+        function addSpatula() {
+            // Manche (Handle)
+            const handle = new fabric.Line([-35, -35, 35, 35], { stroke: '#94a3b8', strokeWidth: 4, originX: 'center', originY: 'center' });
+            // Côté cuillère (Spoon end)
+            const spoon = new fabric.Ellipse({ rx: 5, ry: 12, fill: '#cbd5e1', stroke: '#64748b', strokeWidth: 1.5, left: -42, top: -42, angle: -45, originX: 'center', originY: 'center' });
+            // Côté plat (Flat end)
+            const flatEnd = new fabric.Rect({ width: 10, height: 20, fill: '#cbd5e1', stroke: '#64748b', strokeWidth: 1.5, left: 42, top: 42, angle: -45, originX: 'center', originY: 'center' });
+
+            const group = new fabric.Group([spoon, handle, flatEnd], { originX: 'center', originY: 'center' });
+            centerAndAdd(group);
+        }
+
         function addSpreader() {
             const handle = new fabric.Rect({ width: 6, height: 80, fill: 'rgba(241, 245, 249, 0.9)', stroke: '#475569', strokeWidth: 2, rx: 3, top: -20, originX: 'center', originY: 'center' });
             const base = new fabric.Rect({ width: 40, height: 6, fill: 'rgba(241, 245, 249, 0.9)', stroke: '#475569', strokeWidth: 2, rx: 3, top: 20, originX: 'center', originY: 'center' });
@@ -949,6 +978,49 @@
             
             attachIncubatorEvent(group);
             centerAndAdd(group);
+        }
+
+        // --- NOUVEAU : Autoclave ---
+        function addAutoclave() {
+            // Corps principal (Cuve pressurisée)
+            const body = new fabric.Rect({ width: 120, height: 140, fill: '#e2e8f0', stroke: '#64748b', strokeWidth: 3, rx: 10, originX: 'center', originY: 'center', top: 10 });
+            // Couvercle
+            const lid = new fabric.Rect({ width: 130, height: 20, fill: '#cbd5e1', stroke: '#64748b', strokeWidth: 3, rx: 4, originX: 'center', originY: 'center', top: -70 });
+            // Volant de serrage (fermeture)
+            const wheelBase = new fabric.Rect({ width: 20, height: 15, fill: '#94a3b8', stroke: '#64748b', strokeWidth: 2, originX: 'center', originY: 'center', top: -85 });
+            const wheel = new fabric.Ellipse({ rx: 25, ry: 6, fill: '#334155', originX: 'center', originY: 'center', top: -95 });
+            // Manomètre (Cadran de pression)
+            const gaugeOuter = new fabric.Circle({ radius: 18, fill: '#f8fafc', stroke: '#475569', strokeWidth: 3, originX: 'center', originY: 'center', top: -10, left: 0 });
+            const gaugeNeedle = new fabric.Line([0, 0, 10, -8], { stroke: '#ef4444', strokeWidth: 2, originX: 'center', originY: 'bottom', top: -10, left: 0 });
+            const gaugeCenter = new fabric.Circle({ radius: 3, fill: '#1e293b', originX: 'center', originY: 'center', top: -10, left: 0 });
+            // Écran de contrôle
+            const screenPanel = new fabric.Rect({ width: 100, height: 26, fill: '#0f172a', rx: 3, originX: 'center', originY: 'center', top: 50 });
+            const screenText = new fabric.Text('121°C - 15min', { fontSize: 12, fill: '#10b981', fontFamily: 'monospace', fontWeight: 'bold', originX: 'center', originY: 'center', top: 50 });
+
+            const group = new fabric.Group([body, lid, wheelBase, wheel, gaugeOuter, gaugeNeedle, gaugeCenter, screenPanel, screenText], { originX: 'center', originY: 'center' });
+            group.isAutoclave = true;
+
+            attachAutoclaveEvent(group);
+            centerAndAdd(group);
+        }
+
+        function attachAutoclaveEvent(group) {
+            group.on('mousedblclick', () => {
+                const textObj = group.getObjects().find(o => o.type === 'text' && o.fill === '#10b981');
+                if(!textObj) return;
+                const inputHtml = `<label class="block text-xs font-bold mb-1">Température & Temps (ex: 121°C - 15min)</label>
+                                   <input type="text" id="autoclaveInput" value="${textObj.text}" class="w-full border border-slate-300 rounded p-2 focus:border-blue-500 outline-none">`;
+                openModal("Réglage de l'Autoclave", inputHtml, "Appliquer", "bg-blue-600 hover:bg-blue-700", () => {
+                    const newVal = document.getElementById('autoclaveInput').value;
+                    if(newVal) {
+                        group.removeWithUpdate(textObj);
+                        textObj.set('text', newVal);
+                        group.addWithUpdate(textObj);
+                        group.set('dirty', true);
+                        canvas.renderAll();
+                    }
+                });
+            });
         }
 
         // Balance de précision
@@ -1063,6 +1135,7 @@
                         if (obj.isIncubator) attachIncubatorEvent(obj);
                         if (obj.isBalance) attachBalanceEvent(obj);
                         if (obj.isRack) attachRackEvent(obj);
+                        if (obj.isAutoclave) attachAutoclaveEvent(obj);
                     });
                     
                     canvas.renderAll();
