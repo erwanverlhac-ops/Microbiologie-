@@ -71,10 +71,10 @@
                 <button onclick="moveToBack()" class="flex items-center justify-center w-7 h-7 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded transition shadow-sm" title="Mettre en arrière-plan"><i data-lucide="arrow-down-to-line" class="w-4 h-4"></i></button>
             </div>
 
-            <!-- NOUVEAU : Color Picker pour liquides -->
+            <!-- NOUVEAU : Color Picker pour liquides ET poudres -->
             <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-md border border-slate-200 pl-2">
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Liquide</span>
-                <input type="color" id="liquidColorPicker" class="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent opacity-50" title="Changer la couleur du liquide (sélectionnez un objet)" disabled value="#cccccc">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Liquide / Poudre</span>
+                <input type="color" id="liquidColorPicker" class="w-7 h-7 rounded cursor-pointer border-0 p-0 bg-transparent opacity-50" title="Changer la couleur du liquide ou de la poudre (sélectionnez un objet)" disabled value="#cccccc">
             </div>
 
             <!-- NOUVEAU : Color Picker pour Colonies -->
@@ -174,6 +174,17 @@
                 <!-- Produits -->
                 <div class="col-span-2 text-xs font-bold text-slate-400 mt-4 mb-1">Produits & Échantillons</div>
 
+                <!-- NOUVEAU : Boîte et Tas de poudre -->
+                <button onclick="addPowderBox()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-amber-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="8" width="12" height="14" rx="2"/><path d="M4 4h16v4H4z"/><path d="M9 14h6" opacity="0.3"/></svg>
+                    <span class="text-xs font-medium text-center">Boîte (Poudre)</span>
+                </button>
+
+                <button onclick="addPowderPile()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-amber-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20 Q 12 5 21 20 Z" fill="currentColor" opacity="0.2"/><circle cx="12" cy="15" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1" fill="currentColor"/><circle cx="15" cy="18" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+                    <span class="text-xs font-medium text-center">Tas de Poudre</span>
+                </button>
+
                 <button onclick="addShrimp()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10 A 6 6 0 0 1 20 10 A 8 8 0 0 1 10 20" stroke-linecap="round"/><path d="M10 20 L 6 22 L 8 17"/><circle cx="16" cy="6" r="1" fill="currentColor"/></svg>
                     <span class="text-xs font-medium text-center">Crevette</span>
@@ -229,6 +240,12 @@
                 <button onclick="addIncubator()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
                     <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><rect x="8" y="6" width="8" height="4" rx="1"/><path d="M6 14h12M6 18h12"/></svg>
                     <span class="text-xs font-medium text-center">Étuve (Incubateur)</span>
+                </button>
+
+                <!-- NOUVEAU : Entonnoir -->
+                <button onclick="addFunnel()" class="flex flex-col items-center justify-center p-3 border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition gap-2 group">
+                    <svg viewBox="0 0 24 24" class="w-8 h-8 text-slate-600 group-hover:text-blue-600" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16l-6 10v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2v-6L4 4z"/></svg>
+                    <span class="text-xs font-medium text-center">Entonnoir</span>
                 </button>
 
                 <!-- Balance de précision -->
@@ -763,6 +780,57 @@
             
             const group = new fabric.Group([neck, body, liquid, cap], { originX: 'center', originY: 'center' });
             group.hasLiquid = true;
+            centerAndAdd(group);
+        }
+
+        // --- NOUVEAU : Milieux déshydratés et Entonnoir ---
+
+        function addPowderBox() {
+            const body = new fabric.Rect({ width: 60, height: 80, fill: '#f8fafc', stroke: '#64748b', strokeWidth: 2, rx: 4, originX: 'center', originY: 'center' });
+            const cap = new fabric.Rect({ width: 66, height: 18, fill: '#1e293b', stroke: '#0f172a', strokeWidth: 2, top: -45, rx: 2, originX: 'center', originY: 'center' });
+            const labelBg = new fabric.Rect({ width: 50, height: 45, fill: '#ffffff', stroke: '#cbd5e1', strokeWidth: 1, originX: 'center', originY: 'center' });
+            
+            // Texture de poudre à l'intérieur (réagit au color picker)
+            const powderLevel = new fabric.Rect({ width: 56, height: 35, fill: '#fcd34d', top: 21, originX: 'center', originY: 'center', liquidPart: true, baseHexColor: '#fcd34d', liquidAlpha: 1 });
+            
+            const text1 = new fabric.Text('MILIEU', { fontSize: 10, fill: '#475569', top: -8, fontWeight: 'bold', originX: 'center', originY: 'center' });
+            const text2 = new fabric.Text('DÉSHYDRATÉ', { fontSize: 7, fill: '#64748b', top: 4, originX: 'center', originY: 'center' });
+            
+            // On positionne la poudre derrière l'étiquette
+            const group = new fabric.Group([body, powderLevel, labelBg, text1, text2, cap], { originX: 'center', originY: 'center' });
+            group.hasLiquid = true; // Active le sélecteur de couleur "Liquide / Poudre"
+            centerAndAdd(group);
+        }
+
+        function addPowderPile() {
+            // Un monticule modélisé par une courbe SVG
+            const mound = new fabric.Path('M -40 20 Q 0 -25 40 20 Z', { fill: '#fcd34d', stroke: '#d97706', strokeWidth: 1, originX: 'center', originY: 'center', liquidPart: true, baseHexColor: '#fcd34d', liquidAlpha: 1 });
+            
+            // Génération de petits points pour la texture
+            const dots = [];
+            for(let i=0; i<25; i++) {
+                dots.push(new fabric.Circle({ 
+                    radius: Math.random() * 1.5 + 0.5, 
+                    fill: '#b45309', 
+                    left: (Math.random() - 0.5) * 50, 
+                    top: (Math.random() * 20) + 5, 
+                    originX: 'center', originY: 'center' 
+                }));
+            }
+            const group = new fabric.Group([mound, ...dots], { originX: 'center', originY: 'center' });
+            group.hasLiquid = true; // Active le sélecteur de couleur "Liquide / Poudre"
+            centerAndAdd(group);
+        }
+
+        function addFunnel() {
+            // Cône supérieur
+            const topCone = new fabric.Polygon([{x: -35, y: -40}, {x: 35, y: -40}, {x: 8, y: 15}, {x: -8, y: 15}], { fill: 'rgba(248, 250, 252, 0.7)', stroke: '#64748b', strokeWidth: 2, originX: 'center', originY: 'center' });
+            // Embout d'écoulement
+            const spout = new fabric.Rect({ width: 16, height: 35, fill: 'rgba(248, 250, 252, 0.7)', stroke: '#64748b', strokeWidth: 2, top: 25, originX: 'center', originY: 'center' });
+            // Ouverture en ellipse en haut
+            const opening = new fabric.Ellipse({ rx: 35, ry: 8, fill: 'rgba(248, 250, 252, 0.9)', stroke: '#64748b', strokeWidth: 2, top: -40, originX: 'center', originY: 'center' });
+
+            const group = new fabric.Group([spout, topCone, opening], { originX: 'center', originY: 'center' });
             centerAndAdd(group);
         }
 
